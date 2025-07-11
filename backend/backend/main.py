@@ -13,16 +13,6 @@ def read_cases() -> dict:
     return {"cases": [{"case_id": 1}, {"case_id": 2}]}
 
 
-@app.post(
-    "/cases",
-    tags=["cases"],
-    summary="Create a new case",
-    description="Create a new case with the provided details.",
-)
-async def create_case(case: dict) -> dict:
-    return {"case": case}
-
-
 @app.get(
     "/cases/{case_id}",
     tags=["cases"],
@@ -31,6 +21,16 @@ async def create_case(case: dict) -> dict:
 )
 def read_case(case_id: int, q: str | None = None) -> dict:
     return {"case_id": case_id, "q": q}
+
+
+@app.post(
+    "/cases",
+    tags=["cases"],
+    summary="Create a new case",
+    description="Create a new case with the provided details.",
+)
+async def create_case(case: dict) -> dict:
+    return {"case": case}
 
 
 @app.put(
