@@ -1,6 +1,14 @@
 from fastapi import FastAPI
+from pydantic import BaseModel
 
 app = FastAPI()
+
+
+class Case(BaseModel):
+    case_id: int
+    title: str
+    description: str | None = None
+    status: str | None = None
 
 
 @app.get(
@@ -9,8 +17,21 @@ app = FastAPI()
     summary="List all cases",
     description="Retrieve a list of all cases.",
 )
-def read_cases() -> dict:
-    return {"cases": [{"case_id": 1}, {"case_id": 2}]}
+def read_cases() -> list[Case]:
+    return [
+        Case(
+            case_id=1,
+            title="Sample Case 1",
+            description="This is a sample case.",
+            status="open",
+        ),
+        Case(
+            case_id=2,
+            title="Sample Case 2",
+            description="This is another sample case.",
+            status="closed",
+        ),
+    ]
 
 
 @app.get(
@@ -19,8 +40,13 @@ def read_cases() -> dict:
     summary="Get a case by ID",
     description="Retrieve a specific case using its unique identifier.",
 )
-def read_case(case_id: int, q: str | None = None) -> dict:
-    return {"case_id": case_id, "q": q}
+def read_case(case_id: int, page: int = 1, size_per_page: int = 50) -> Case:
+    return Case(
+        case_id=case_id,
+        title="Sample Case",
+        description="This is a sample case.",
+        status="open",
+    )
 
 
 @app.post(
@@ -29,8 +55,8 @@ def read_case(case_id: int, q: str | None = None) -> dict:
     summary="Create a new case",
     description="Create a new case with the provided details.",
 )
-async def create_case(case: dict) -> dict:
-    return {"case": case}
+async def create_case(case: Case) -> Case:
+    return case
 
 
 @app.put(
@@ -39,8 +65,8 @@ async def create_case(case: dict) -> dict:
     summary="Update a case",
     description="Update an existing case using its unique identifier.",
 )
-async def update_case(case_id: int, case: dict) -> dict:
-    return {"case_id": case_id, "case": case}
+async def update_case(case_id: int, case: Case) -> Case:
+    return case
 
 
 @app.delete(
