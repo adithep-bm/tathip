@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User } from 'lucide-react';
+import axios from 'axios';
 
 const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -9,7 +10,7 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate(); // <-- 4. Initialize navigate
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!credentials.username || !credentials.password) {
@@ -17,23 +18,13 @@ const LoginPage: React.FC = () => {
       return;
     }
     try {
-      // Simulate login logic
-      if (credentials.username === 'officer001' && credentials.password === 'secure123') {
-        // Create mock user data that matches the User interface in your context
-        const mockUserData = {
-          id: 1,
-          name: 'Officer 001',
-        };
-
-        // 5. Call the login function from the context
-        action.login(mockUserData);
-        console.log('Login successful');
-        navigate('/case'); // <-- Redirect after successful login
-      } else {
-        throw new Error('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
-      }
-    } catch (err) {
-      // If the API call fails, you would handle the error here
+      const response = await axios.post('/login', credentials);
+      const userData = response.data;
+      action.login(userData);
+      console.log('Login successful');
+      navigate('/case');
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
       console.error(err);
     }
   };
