@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Lock, User } from 'lucide-react';
-import axios from 'axios';
+import axios from '../utils/axiosInstance';
 
 const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
@@ -18,7 +18,8 @@ const LoginPage: React.FC = () => {
       return;
     }
     try {
-      const response = await axios.post('/login', credentials);
+      const response = await axios.post('/auths/login', credentials);
+      console.log('Login response:', response);
       const userData = response.data;
       action.login(userData);
       console.log('Login successful');
