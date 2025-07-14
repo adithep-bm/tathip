@@ -3,16 +3,23 @@ import type { ReactNode } from 'react';
 import axios from '../utils/axiosInstance';
 
 // --- Interfaces remain the same ---
+interface Credentials {
+    username: string;
+    password: string;
+}
+
 interface User {
-    id: number;
-    name: string;
+    id: string;
+    username: string;
+    role?: string;
+    // Add other user properties as needed
 }
 
 interface AuthContextType {
     userInfo: User | null;
     loading: boolean;
     action: {
-        login: (userData: User) => void;
+        login: (credentials: Credentials) => void;
         logout: () => void;
     };
 }
@@ -43,15 +50,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         fetchUser();
     }, []); // The empty array [] ensures this effect runs only once
 
-    const login = (userData: User) => {
-        // Save user to localStorage to persist the session
-        sessionStorage.setItem('tathip-user', JSON.stringify(userData));
+    const login = async (credentials: Credentials) => {
+        const response = await axios.post('/auths/login', credentials);
+        console.log('Login response:', response.data);
+        const userData = response.data;
         setUser(userData);
     };
 
     const logout = () => {
-        // Remove user from localStorage
-        sessionStorage.removeItem('tathip-user');
         setUser(null);
     };
 
