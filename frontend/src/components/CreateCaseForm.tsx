@@ -1,18 +1,9 @@
-import type { Case } from '../types/case';
+import type { Case, newCase } from '../types/case';
+
 
 interface CreateCaseFormProps {
-  newCase: {
-    title: string;
-    description: string;
-    category: 'cybercrime' | 'financial' | 'gambling' | 'fraud' | 'other';
-    priority: 'low' | 'medium' | 'high' | 'critical';
-  };
-  setNewCase: React.Dispatch<React.SetStateAction<{
-    title: string;
-    description: string;
-    category: 'cybercrime' | 'financial' | 'gambling' | 'fraud' | 'other';
-    priority: 'low' | 'medium' | 'high' | 'critical';
-  }>>;
+  newCase: newCase;
+  setNewCase: React.Dispatch<React.SetStateAction<newCase>>;
   createCase: () => void;
   setShowCreateForm: React.Dispatch<React.SetStateAction<boolean>>;
 }
@@ -35,8 +26,8 @@ function CreateCaseForm({ newCase, setNewCase, createCase, setShowCreateForm }: 
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">ประเภทคดี</label>
           <select
-            value={newCase.category}
-            onChange={(e) => setNewCase({ ...newCase, category: e.target.value as Case['category'] })}
+            value={newCase.case_type}
+            onChange={(e) => setNewCase({ ...newCase, case_type: e.target.value as Case['case_type'] })}
             className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
           >
             <option value="cybercrime">อาชญากรรมไซเบอร์</option>

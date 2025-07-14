@@ -16,7 +16,7 @@ function CaseManagementPage() {
   const [newCase, setNewCase] = useState({
     title: '',
     description: '',
-    category: 'cybercrime' as Case['category'],
+    case_type: 'cybercrime' as Case['case_type'],
     priority: 'medium' as Case['priority']
   });
 
@@ -27,10 +27,10 @@ function CaseManagementPage() {
     const today = new Date().toISOString().split('T')[0];
 
     const newCaseData: Case = {
-      id: caseId,
+      case_id: caseId,
       title: newCase.title,
       description: newCase.description,
-      category: newCase.category,
+      case_type: newCase.case_type,
       priority: newCase.priority,
       status: 'open',
       createdDate: today,
@@ -40,7 +40,7 @@ function CaseManagementPage() {
     };
 
     setCases([newCaseData, ...cases]);
-    setNewCase({ title: '', description: '', category: 'cybercrime', priority: 'medium' });
+    setNewCase({ title: '', description: '', case_type: 'cybercrime', priority: 'medium' });
     setShowCreateForm(false);
   };
 
@@ -107,7 +107,7 @@ function CaseManagementPage() {
   const filteredCases = cases.filter(caseItem => {
     const matchesFilter = filter === 'all' || caseItem.status === filter;
     const matchesSearch = caseItem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      caseItem.id.toLowerCase().includes(searchTerm.toLowerCase());
+      caseItem.case_id.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
   return (
@@ -199,13 +199,13 @@ function CaseManagementPage() {
                 <h2 className="text-lg font-semibold text-white mb-4">รายการคดี</h2>
                 <div className="space-y-4">
                   {filteredCases.map((caseItem) => (
-                    <div key={caseItem.id} className="border border-slate-600 rounded-lg p-4 hover:shadow-lg transition-shadow bg-slate-700">
+                    <div key={caseItem.case_id} className="border border-slate-600 rounded-lg p-4 hover:shadow-lg transition-shadow bg-slate-700">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
                             <h3 className="font-medium text-white">{caseItem.title}</h3>
-                            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(caseItem.category)}`}>
-                              <span>{getCategoryText(caseItem.category)}</span>
+                            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(caseItem.case_type)}`}>
+                              <span>{getCategoryText(caseItem.case_type)}</span>
                             </div>
                             <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(caseItem.priority)}`}>
                               <span>{getPriorityText(caseItem.priority)}</span>
@@ -217,7 +217,7 @@ function CaseManagementPage() {
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
                               <p className="text-gray-400">รหัสคดี</p>
-                              <p className="font-medium text-white">{caseItem.id}</p>
+                              <p className="font-medium text-white">{caseItem.case_id}</p>
                             </div>
                             <div>
                               <p className="text-gray-400">เจ้าหน้าที่</p>
