@@ -151,8 +151,8 @@ const UserProfilePage = () => {
                             </div>
                         )}
 
-                        {/* Main Content - Two Column Layout */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Main Content */}
+                        <div className="grid grid-cols-1 gap-6">
                             {/* Profile Information Card */}
                             <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-colors">
                                 <div className="flex items-center space-x-3 mb-4">

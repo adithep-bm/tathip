@@ -51,10 +51,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }, []); // The empty array [] ensures this effect runs only once
 
     const login = async (credentials: Credentials) => {
-        const response = await axios.post('/auths/login', credentials);
-        console.log('Login response:', response.data);
-        const userData = response.data;
-        setUser(userData);
+        try {
+            const response = await axios.post('auths/login', credentials);
+            setUser(response.data);
+            return response.data; // return ข้อมูลผู้ใช้
+        } catch (error) {
+            throw error; // throw error ให้ component จัดการ
+        }
     };
 
     const logout = () => {
