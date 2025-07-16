@@ -4,6 +4,7 @@ import Home from "./views/HomePage";
 import ProtectedRoute from "./contexts/ProtectedRoute";
 import Login from "./views/LoginPage";
 import CaseManagement from "./views/CaseManagementPage";
+import UserManagementPage from "./views/UserManagementPage";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route element={<ProtectedRoute />}>
           <Route path="/case" element={<CaseManagement />} />
+          <Route path="/usermanagement" element={<UserManagementPage />} />
         </Route>
       </Routes>
     </Router >

@@ -1,17 +1,25 @@
 import { createContext, useContext, useState, useEffect } from 'react'; // 1. Import useEffect
 import type { ReactNode } from 'react';
+import axios from '../utils/axiosInstance';
 
 // --- Interfaces remain the same ---
+interface Credentials {
+    username: string;
+    password: string;
+}
+
 interface User {
-    id: number;
-    name: string;
+    id: string;
+    username: string;
+    role?: string;
+    // Add other user properties as needed
 }
 
 interface AuthContextType {
     userInfo: User | null;
     loading: boolean;
     action: {
-        login: (userData: User) => void;
+        login: (credentials: Credentials) => void;
         logout: () => void;
     };
 }
@@ -24,34 +32,32 @@ interface AuthProviderProps {
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [_user, setUser] = useState<User | null>(null);
-    const [loading, setLoading] = useState<boolean>(true); // Start as true
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        try {
-            // Check localStorage for a saved user session
-            const storedUser = sessionStorage.getItem('tathip-user');
-            if (storedUser) {
-                setUser(JSON.parse(storedUser));
+        const fetchUser = async () => {
+            try {
+                const response = await axios.get('/auths/me', {
+                    withCredentials: true, // สำคัญ! เพื่อส่ง cookie ไปด้วย
+                });
+                setUser(response.data);
+            } catch (error) {
+                setUser(null);
+            } finally {
+                setLoading(false);
             }
-        } catch (error) {
-            console.error("Failed to parse user from localStorage", error);
-            // Ensure user is logged out if localStorage is corrupt
-            setUser(null);
-        } finally {
-            // IMPORTANT: Set loading to false after the check is complete
-            setLoading(false);
-        }
+        };
+        fetchUser();
     }, []); // The empty array [] ensures this effect runs only once
 
-    const login = (userData: User) => {
-        // Save user to localStorage to persist the session
-        sessionStorage.setItem('tathip-user', JSON.stringify(userData));
+    const login = async (credentials: Credentials) => {
+        const response = await axios.post('/auths/login', credentials);
+        console.log('Login response:', response.data);
+        const userData = response.data;
         setUser(userData);
     };
 
     const logout = () => {
-        // Remove user from localStorage
-        sessionStorage.removeItem('tathip-user');
         setUser(null);
     };
 
