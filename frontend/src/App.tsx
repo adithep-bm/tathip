@@ -7,6 +7,7 @@ import CaseManagement from "./views/CaseManagementPage";
 import UserManagementPage from "./views/UserManagementPage";
 import SlipReaderPage from "./views/SlipReaderPage";
 import IllegalImagePage from "./views/IllegalImagePage";
+import WebCrawlerPage from "./views/WebCrawlerPage";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/usermanagement" element={<UserManagementPage />} />
           <Route path="/slip" element={<SlipReaderPage />} />
           <Route path="/illegal-images" element={<IllegalImagePage />} />
+          <Route path="/crawler" element={<WebCrawlerPage />} />
         </Route>
       </Routes>
     </Router >
