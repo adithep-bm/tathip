@@ -5,6 +5,8 @@ import ProtectedRoute from "./contexts/ProtectedRoute";
 import Login from "./views/LoginPage";
 import CaseManagement from "./views/CaseManagementPage";
 import UserManagementPage from "./views/UserManagementPage";
+import SlipReaderPage from "./views/SlipReaderPage";
+import IllegalImagePage from "./views/IllegalImagePage";
 
 function App() {
   return (
@@ -15,6 +17,8 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route path="/case" element={<CaseManagement />} />
           <Route path="/usermanagement" element={<UserManagementPage />} />
+          <Route path="/slip" element={<SlipReaderPage />} />
+          <Route path="/illegal-images" element={<IllegalImagePage />} />
         </Route>
       </Routes>
     </Router >
