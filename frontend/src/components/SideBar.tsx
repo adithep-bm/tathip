@@ -11,7 +11,8 @@ function SideBar() {
     { id: 'watchlist', label: 'Watchlist', icon: Eye, color: 'text-red-500', to: '/watchlist' },
     { id: 'alerts', label: 'Alert System', icon: AlertTriangle, color: 'text-orange-500', to: '/alerts' },
     { id: 'reports', label: 'Reports', icon: Search, color: 'text-gray-500', to: '/reports' },
-    { id: 'usermanagement', label: 'User Management', icon: User, color: 'text-indigo-500', to: '/usermanagement' }
+    { id: 'usermanagement', label: 'User Management', icon: User, color: 'text-indigo-500', to: '/usermanagement' },
+    { id: 'profile', label: 'User Profile', icon: User, color: 'text-pink-500', to: '/user-profile' }
   ];
 
   return (

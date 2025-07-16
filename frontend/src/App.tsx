@@ -8,6 +8,7 @@ import UserManagementPage from "./views/UserManagementPage";
 import SlipReaderPage from "./views/SlipReaderPage";
 import IllegalImagePage from "./views/IllegalImagePage";
 import WebCrawlerPage from "./views/WebCrawlerPage";
+import UserProfilePage from "./views/UserProfilePage";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
           <Route path="/slip" element={<SlipReaderPage />} />
           <Route path="/illegal-images" element={<IllegalImagePage />} />
           <Route path="/crawler" element={<WebCrawlerPage />} />
+          <Route path="/user-profile" element={<UserProfilePage />} />
         </Route>
       </Routes>
     </Router >
