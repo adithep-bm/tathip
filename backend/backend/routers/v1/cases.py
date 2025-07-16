@@ -1,8 +1,21 @@
 from enum import Enum
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from datetime import date
 
 router = APIRouter(prefix="/cases", tags=["cases"])
+
+class CaseStatus(str, Enum):
+    open = "open"
+    investigating = "investigating"
+    closed = "closed"
+    suspended = "suspended"
+
+class CasePriority(str, Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+    critical = "critical"
 
 
 class CaseType(str, Enum):
@@ -18,6 +31,12 @@ class Case(BaseModel):
     title: str
     case_type: CaseType
     description: str | None = None
+    priority: CasePriority
+    status: CaseStatus
+    createdDate: date
+    lastUpdated: date
+    assignedOfficer: str
+    evidenceCount: int | None = 0
 
 
 # In-memory "database"
