@@ -121,11 +121,13 @@ const UserProfilePage = () => {
 
     return (
         <div className="min-h-screen bg-slate-900">
+            {/* Header */}
             <Header />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    <SideBar />
-                    <div className="lg:col-span-3 space-y-8">
+                    < SideBar />
+                    {/* Main Content */}
+                    <div className="lg:col-span-3 space-y-6">
                         {/* Page Title with Frame */}
                         <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
                             <div className="flex items-center space-x-3">
@@ -152,7 +154,7 @@ const UserProfilePage = () => {
                         )}
 
                         {/* Main Content - Two Column Layout */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6">
                             {/* Profile Information Card */}
                             <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-colors">
                                 <div className="flex items-center space-x-3 mb-4">
