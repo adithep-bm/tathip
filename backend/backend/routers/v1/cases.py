@@ -1,8 +1,21 @@
 from enum import Enum
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from datetime import date
 
 router = APIRouter(prefix="/cases", tags=["cases"])
+
+class CaseStatus(str, Enum):
+    open = "open"
+    investigating = "investigating"
+    closed = "closed"
+    suspended = "suspended"
+
+class CasePriority(str, Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
+    critical = "critical"
 
 
 class CaseType(str, Enum):
@@ -14,10 +27,16 @@ class CaseType(str, Enum):
 
 
 class Case(BaseModel):
-    case_id: int
+    case_id: str
     title: str
     case_type: CaseType
     description: str | None = None
+    priority: CasePriority
+    status: CaseStatus
+    createdDate: date
+    lastUpdated: date
+    assignedOfficer: str
+    evidenceCount: int | None = 0
 
 
 # In-memory "database"
@@ -56,7 +75,7 @@ async def create_case(case: Case) -> Case:
     summary="Update a case",
     description="Update an existing case using its unique identifier.",
 )
-async def update_case(case_id: int, case: Case) -> Case:
+async def update_case(case_id: str, case: Case) -> Case:
     for idx, existing_case in enumerate(cases_db):
         if existing_case.case_id == case_id:
             cases_db[idx] = case
