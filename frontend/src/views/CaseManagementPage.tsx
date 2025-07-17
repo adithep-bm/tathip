@@ -5,7 +5,7 @@ import { FolderOpen, Plus, Search, Calendar, AlertTriangle, CheckCircle, Clock, 
 import SideBar from '../components/SideBar';
 import Header from '../components/Header';
 import CreateCaseForm from '../components/CreateCaseForm';
-import type { Case } from '../types/case';
+import type { Case, CasePriority } from '../types/case';
 
 function CaseManagementPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -13,82 +13,88 @@ function CaseManagementPage() {
   const [searchTerm, setSearchTerm] = useState('');
 
   const [cases, setCases] = useState<Case[]>([]);
-
   const [newCase, setNewCase] = useState({
     title: '',
     description: '',
-    case_type: 'cybercrime' as Case['case_type'],
+    case_type: 'cyber_crimes' as Case['case_type'],
     priority: 'medium' as Case['priority']
   });
 
-  // Add loading and error states
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Create fetch function
   const fetchCases = async () => {
     try {
       setIsLoading(true);
       setError(null);
       const response = await axios.get('/cases');
 
-      // SAFEGUARD: Check if the response data is an array
       if (Array.isArray(response.data)) {
         setCases(response.data);
       } else {
-        // If not, log an error and set state to an empty array to prevent crashes
         console.error("API response is not an array:", response.data);
         setError("Received invalid data format from the server.");
-        setCases([]); // Fallback to an empty array
+        setCases([]);
       }
-
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to fetch cases');
       console.error('Error fetching cases:', err);
-      setCases([]); // Also set to empty on error
+      setCases([]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const createCase = () => {
+  const createCase = async () => {
     if (!newCase.title || !newCase.description) return;
 
-    const caseId = `CASE-2024-${String(cases.length + 1).padStart(3, '0')}`;
-    const today = new Date().toISOString().split('T')[0];
-
-    const newCaseData: Case = {
-      case_id: caseId,
+    const casePayload = {
       title: newCase.title,
       description: newCase.description,
       case_type: newCase.case_type,
-      priority: newCase.priority,
-      status: 'open',
-      createdDate: today,
-      lastUpdated: today,
-      assignedOfficer: 'นายสมชาย สืบสวน',
-      evidenceCount: 0 // จำนวนหลักฐานเริ่มต้นเป็น 0
     };
 
-    setCases([newCaseData, ...cases]);
-    setNewCase({ title: '', description: '', case_type: 'cybercrime', priority: 'medium' });
-    setShowCreateForm(false);
+    try {
+      const response = await axios.post('/cases', casePayload);
+      const newCaseData = response.data;
+      // Add the new case to the top of the list
+      setCases(prevCases => [newCaseData, ...prevCases]);
+      setNewCase({ title: '', description: '', case_type: 'cyber_crimes', priority: 'medium' });
+      setShowCreateForm(false);
+    } catch (error) {
+      console.error('Failed to create case:', error);
+      // You might want to show an error to the user here
+    }
   };
 
+  useEffect(() => {
+    fetchCases();
+  }, []);
+
+  // Filtering Logic
+  const filteredCases = cases.filter(caseItem => {
+    const matchesFilter = filter === 'all' || caseItem.status === filter;
+    // FIX 3: Convert case_id to string before using .toLowerCase() to prevent runtime errors
+    const matchesSearch = caseItem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(caseItem.case_id).toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  // Helper Functions
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'cybercrime': return 'text-blue-400 bg-blue-900';
-      case 'financial': return 'text-green-400 bg-green-900';
-      case 'gambling': return 'text-red-400 bg-red-900';
-      case 'fraud': return 'text-orange-400 bg-orange-900';
+      case 'cyber_crimes': return 'text-blue-400 bg-blue-900/50';
+      case 'financial_crimes': return 'text-green-400 bg-green-900/50';
+      case 'gambling': return 'text-red-400 bg-red-900/50';
+      case 'fraud': return 'text-orange-400 bg-orange-900/50';
       default: return 'text-gray-400 bg-gray-800';
     }
   };
 
   const getCategoryText = (category: string) => {
     switch (category) {
-      case 'cybercrime': return 'อาชญากรรมไซเบอร์';
-      case 'financial': return 'อาชญากรรมทางการเงิน';
+      case 'cyber_crimes': return 'อาชญากรรมไซเบอร์';
+      case 'financial_crimes': return 'อาชญากรรมทางการเงิน';
       case 'gambling': return 'การพนันออนไลน์';
       case 'fraud': return 'การหลอกลวง';
       default: return 'อื่นๆ';
@@ -97,10 +103,10 @@ function CaseManagementPage() {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'critical': return 'text-red-300 bg-red-900';
-      case 'high': return 'text-orange-300 bg-orange-900';
-      case 'medium': return 'text-yellow-300 bg-yellow-900';
-      case 'low': return 'text-green-300 bg-green-900';
+      case 'critical': return 'text-red-300 bg-red-800/80';
+      case 'high': return 'text-orange-300 bg-orange-800/80';
+      case 'medium': return 'text-yellow-300 bg-yellow-800/80';
+      case 'low': return 'text-green-300 bg-green-800/80';
       default: return 'text-gray-300 bg-gray-800';
     }
   };
@@ -135,29 +141,45 @@ function CaseManagementPage() {
     }
   };
 
-  const filteredCases = cases.filter(caseItem => {
-    const matchesFilter = filter === 'all' || caseItem.status === filter;
-    const matchesSearch = caseItem.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      caseItem.case_id.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  // Grouping Logic
+  // FIX 2: Add 'critical' to the priority order array
+  const priorityOrder: CasePriority[] = ['critical', 'high', 'medium', 'low'];
+  const priorityGroupTitles: Record<CasePriority, string> = {
+    critical: 'ความสำคัญวิกฤต',
+    high: 'ความสำคัญสูงสุด',
+    medium: 'ความสำคัญปานกลาง',
+    low: 'ความสำคัญต่ำ'
+  };
 
-  // Use fetchCases in useEffect
-  useEffect(() => {
-    fetchCases();
-  }, []); // Empty dependency array means this runs once on mount
+  const groupedCases = filteredCases.reduce((acc, caseItem) => {
+    const { priority } = caseItem;
+    if (!acc[priority]) {
+      acc[priority] = [];
+    }
+    acc[priority].push(caseItem);
+    return acc;
+  }, {} as Record<CasePriority, Case[]>);
+
+  // FIX 2: Add 'critical' case to the border color function
+  const getPriorityBorderColor = (priority: CasePriority): string => {
+    switch (priority) {
+      case 'critical': return 'border-purple-500';
+      case 'high': return 'border-red-500';
+      case 'medium': return 'border-yellow-500';
+      case 'low': return 'border-green-500';
+      default: return 'border-gray-500';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Header */}
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          < SideBar />
-          {/* Main Content */}
+          <SideBar />
           <div className="lg:col-span-3">
             <div className="space-y-6">
-              {/* Header */}
+              {/* Page Header */}
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -186,46 +208,39 @@ function CaseManagementPage() {
                   setShowCreateForm={setShowCreateForm}
                 />
               )}
+
               {/* Filters and Search */}
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                   <div className="flex space-x-2">
+                    {/* Filter Buttons */}
                     <button
                       onClick={() => setFilter('all')}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filter === 'all'
-                        ? 'bg-purple-700 text-white'
-                        : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
-                        }`}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filter === 'all' ? 'bg-purple-700 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'}`}
                     >
                       ทั้งหมด ({cases.length})
                     </button>
                     <button
                       onClick={() => setFilter('open')}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filter === 'open'
-                        ? 'bg-purple-700 text-white'
-                        : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
-                        }`}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filter === 'open' ? 'bg-purple-700 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'}`}
                     >
                       เปิดคดี ({cases.filter(c => c.status === 'open').length})
                     </button>
                     <button
                       onClick={() => setFilter('investigating')}
-                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filter === 'investigating'
-                        ? 'bg-purple-700 text-white'
-                        : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
-                        }`}
+                      className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${filter === 'investigating' ? 'bg-purple-700 text-white' : 'bg-slate-700 text-gray-300 hover:bg-slate-600'}`}
                     >
                       กำลังสืบสวน ({cases.filter(c => c.status === 'investigating').length})
                     </button>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Search className="w-4 h-4 text-gray-400" />
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                     <input
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="ค้นหาคดี..."
-                      className="px-3 py-1 bg-slate-700 border border-slate-600 rounded-md text-sm text-white placeholder-gray-400"
+                      placeholder="ค้นหารหัส หรือชื่อคดี..."
+                      className="pl-9 pr-3 py-1.5 w-full bg-slate-700 border border-slate-600 rounded-md text-sm text-white placeholder-gray-400 focus:ring-purple-500 focus:border-purple-500"
                     />
                   </div>
                 </div>
@@ -251,68 +266,82 @@ function CaseManagementPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {filteredCases.map((caseItem) => (
-                      <div key={caseItem.case_id} className="border border-slate-600 rounded-lg p-4 hover:shadow-lg transition-shadow bg-slate-700">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <h3 className="font-medium text-white">{caseItem.title}</h3>
-                              <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(caseItem.case_type)}`}>
-                                <span>{getCategoryText(caseItem.case_type)}</span>
-                              </div>
-                              <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(caseItem.priority)}`}>
-                                <span>{getPriorityText(caseItem.priority)}</span>
-                              </div>
-                            </div>
-
-                            <p className="text-sm text-gray-300 mb-3">{caseItem.description}</p>
-
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                              <div>
-                                <p className="text-gray-400">รหัสคดี</p>
-                                <p className="font-medium text-white">{caseItem.case_id}</p>
-                              </div>
-                              <div>
-                                <p className="text-gray-400">เจ้าหน้าที่</p>
-                                <p className="font-medium text-white">{caseItem.assignedOfficer}</p>
-                              </div>
-                              <div>
-                                <p className="text-gray-400">สถานะ</p>
-                                <div className="flex items-center space-x-1 text-white">
-                                  {getStatusIcon(caseItem.status)}
-                                  <span>{getStatusText(caseItem.status)}</span>
+                  // FIX 1: RENDER THE GROUPED CASES
+                  <div className="space-y-8">
+                    {priorityOrder.map(priority => (
+                      groupedCases[priority] && groupedCases[priority].length > 0 && (
+                        <div key={priority}>
+                          <h3 className="text-base font-semibold text-gray-300 mb-3 ml-1">
+                            {priorityGroupTitles[priority]} ({groupedCases[priority].length})
+                          </h3>
+                          <div className="space-y-4">
+                            {groupedCases[priority].map((caseItem) => (
+                              <div key={caseItem.case_id} className={`bg-slate-700/50 border-l-4 rounded-r-lg p-4 hover:bg-slate-600/50 hover:shadow-lg transition-all ${getPriorityBorderColor(caseItem.priority)}`}>
+                                {/* Case Item Content - a lot of divs, keeping it the same */}
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-2">
+                                      <h3 className="font-medium text-white">{caseItem.title}</h3>
+                                      <div className={`flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium ${getCategoryColor(caseItem.case_type)}`}>
+                                        <span>{getCategoryText(caseItem.case_type)}</span>
+                                      </div>
+                                      <div className={`flex items-center space-x-1 px-2 py-0.5 rounded-full text-xs font-medium ${getPriorityColor(caseItem.priority)}`}>
+                                        <span>{getPriorityText(caseItem.priority)}</span>
+                                      </div>
+                                    </div>
+                                    <p className="text-sm text-gray-300 mb-3">{caseItem.description}</p>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                                      <div>
+                                        <p className="text-gray-400">รหัสคดี</p>
+                                        <p className="font-medium text-white">{caseItem.case_id}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-gray-400">เจ้าหน้าที่</p>
+                                        <p className="font-medium text-white">{caseItem.assignedOfficer}</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-gray-400">สถานะ</p>
+                                        <div className="flex items-center space-x-1.5 text-white">
+                                          {getStatusIcon(caseItem.status)}
+                                          <span>{getStatusText(caseItem.status)}</span>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <p className="text-gray-400">หลักฐาน</p>
+                                        <div className="flex items-center space-x-1.5 text-white">
+                                          <FileText className="w-4 h-4" />
+                                          <span>{caseItem.evidenceCount} รายการ</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="mt-3 flex items-center space-x-4 text-xs text-gray-400">
+                                      <div className="flex items-center space-x-1">
+                                        <Calendar className="w-3 h-3" />
+                                        <span>สร้าง: {caseItem.createdDate}</span>
+                                      </div>
+                                      <span>อัปเดต: {caseItem.lastUpdated}</span>
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 ml-4">
+                                    <button className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors">
+                                      ดูรายละเอียด
+                                    </button>
+                                    <button className="px-3 py-1 bg-green-700 text-green-200 rounded text-sm hover:bg-green-600 transition-colors">
+                                      แก้ไข
+                                    </button>
+                                  </div>
                                 </div>
                               </div>
-                              <div>
-                                <p className="text-gray-400">หลักฐาน</p>
-                                <div className="flex items-center space-x-1 text-white">
-                                  <FileText className="w-4 h-4" />
-                                  <span>{caseItem.evidenceCount} รายการ</span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="mt-3 flex items-center space-x-4 text-xs text-gray-400">
-                              <div className="flex items-center space-x-1">
-                                <Calendar className="w-3 h-3" />
-                                <span>สร้าง: {caseItem.createdDate}</span>
-                              </div>
-                              <span>อัปเดต: {caseItem.lastUpdated}</span>
-                            </div>
-                          </div>
-
-                          <div className="flex space-x-2 ml-4">
-                            <button className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors">
-                              ดูรายละเอียด
-                            </button>
-                            <button className="px-3 py-1 bg-green-700 text-green-200 rounded text-sm hover:bg-green-600 transition-colors">
-                              แก้ไข
-                            </button>
+                            ))}
                           </div>
                         </div>
-                      </div>
+                      )
                     ))}
+                    {filteredCases.length === 0 && (
+                      <div className="text-center py-8 text-gray-400">
+                        <p>ไม่พบรายการคดีที่ตรงกับเงื่อนไข</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -320,7 +349,7 @@ function CaseManagementPage() {
           </div>
         </div>
       </div>
-    </div >
+    </div>
   );
 }
 
