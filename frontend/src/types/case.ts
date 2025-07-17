@@ -19,6 +19,7 @@ export type CaseType = 'cyber_crimes' | 'financial_crimes' | 'gambling' | 'fraud
  * โครงสร้างข้อมูลของคดี (Case Object)
  */
 export interface Case {
+  evidence?: Evidence[];
   case_id: number;
   title: string;
   description: string;
@@ -36,4 +37,12 @@ export interface newCase {
   description: string;
   case_type: CaseType;
   priority: CasePriority;
+}
+
+export interface Evidence {
+  id: string;
+  case_id: string; // ID ของคดีที่หลักฐานนี้เกี่ยวข้อง
+  file_name: string; // ชื่อหลักฐาน
+  url: string;
+  description?: string; // อาจมีคำอธิบายเพิ่มเติมเกี่ยวกับหลักฐาน
 }

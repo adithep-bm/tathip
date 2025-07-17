@@ -5,6 +5,7 @@ import { FolderOpen, Plus, Search, Calendar, AlertTriangle, CheckCircle, Clock, 
 import SideBar from '../components/SideBar';
 import Header from '../components/Header';
 import CreateCaseForm from '../components/CreateCaseForm';
+import { EditCaseModal } from '../components/CaseManagement/EditCaseModal';
 import type { Case, CasePriority } from '../types/case';
 
 function CaseManagementPage() {
@@ -22,6 +23,9 @@ function CaseManagementPage() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedCase, setSelectedCase] = useState<Case | null>(null);
 
   const fetchCases = async () => {
     try {
@@ -74,6 +78,25 @@ function CaseManagementPage() {
     } catch (error) {
       console.error('Failed to create case:', error);
       // You might want to show an error to the user here
+    }
+  };
+
+  const handleEditClick = (caseItem: Case) => {
+    setSelectedCase(caseItem);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateCase = async (updatedCase: Case) => {
+    try {
+      const response = await axios.put(`/cases/${updatedCase.case_id}`, updatedCase);
+      if (response.status === 200) {
+        setCases(cases.map(c =>
+          c.case_id === updatedCase.case_id ? updatedCase : c
+        ));
+        setIsEditModalOpen(false);
+      }
+    } catch (error) {
+      console.error('Failed to update case:', error);
     }
   };
 
@@ -336,7 +359,10 @@ function CaseManagementPage() {
                                     <button className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors">
                                       ดูรายละเอียด
                                     </button>
-                                    <button className="px-3 py-1 bg-yellow-600 text-green-200 rounded text-sm hover:bg-yellow-400 transition-colors">
+                                    <button
+                                      onClick={() => handleEditClick(caseItem)}
+                                      className="px-3 py-1 bg-yellow-600 text-green-200 rounded text-sm hover:bg-yellow-400 transition-colors"
+                                    >
                                       แก้ไข
                                     </button>
                                   </div>
@@ -355,6 +381,15 @@ function CaseManagementPage() {
                   </div>
                 )}
               </div>
+
+              {selectedCase && (
+                <EditCaseModal
+                  isOpen={isEditModalOpen}
+                  onClose={() => setIsEditModalOpen(false)}
+                  onSubmit={handleUpdateCase}
+                  caseData={selectedCase}
+                />
+              )}
             </div>
           </div>
         </div>
