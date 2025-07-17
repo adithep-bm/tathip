@@ -1,3 +1,4 @@
+import HeaderReports from "../components/Reports/HeaderReports";
 import Header from "../components/Header";
 import SideBar from "../components/SideBar";
 
@@ -12,6 +13,7 @@ function ReportsPage() {
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
             <div className="space-y-6">
+              <HeaderReports />
             </div>
           </div>
         </div>
