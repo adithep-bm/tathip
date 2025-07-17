@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import axios from "../utils/axiosInstance"
 import { FolderOpen, Plus, Search, Calendar, AlertTriangle, CheckCircle, Clock, FileText } from 'lucide-react';
 
 import SideBar from '../components/SideBar';
@@ -19,6 +20,36 @@ function CaseManagementPage() {
     case_type: 'cybercrime' as Case['case_type'],
     priority: 'medium' as Case['priority']
   });
+
+  // Add loading and error states
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Create fetch function
+  const fetchCases = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await axios.get('/cases');
+
+      // SAFEGUARD: Check if the response data is an array
+      if (Array.isArray(response.data)) {
+        setCases(response.data);
+      } else {
+        // If not, log an error and set state to an empty array to prevent crashes
+        console.error("API response is not an array:", response.data);
+        setError("Received invalid data format from the server.");
+        setCases([]); // Fallback to an empty array
+      }
+
+    } catch (err: any) {
+      setError(err.response?.data?.message || 'Failed to fetch cases');
+      console.error('Error fetching cases:', err);
+      setCases([]); // Also set to empty on error
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const createCase = () => {
     if (!newCase.title || !newCase.description) return;
@@ -110,6 +141,12 @@ function CaseManagementPage() {
       caseItem.case_id.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesFilter && matchesSearch;
   });
+
+  // Use fetchCases in useEffect
+  useEffect(() => {
+    fetchCases();
+  }, []); // Empty dependency array means this runs once on mount
+
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Header */}
@@ -197,69 +234,87 @@ function CaseManagementPage() {
               {/* Cases List */}
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
                 <h2 className="text-lg font-semibold text-white mb-4">รายการคดี</h2>
-                <div className="space-y-4">
-                  {filteredCases.map((caseItem) => (
-                    <div key={caseItem.case_id} className="border border-slate-600 rounded-lg p-4 hover:shadow-lg transition-shadow bg-slate-700">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="font-medium text-white">{caseItem.title}</h3>
-                            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(caseItem.case_type)}`}>
-                              <span>{getCategoryText(caseItem.case_type)}</span>
-                            </div>
-                            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(caseItem.priority)}`}>
-                              <span>{getPriorityText(caseItem.priority)}</span>
-                            </div>
-                          </div>
-
-                          <p className="text-sm text-gray-300 mb-3">{caseItem.description}</p>
-
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <p className="text-gray-400">รหัสคดี</p>
-                              <p className="font-medium text-white">{caseItem.case_id}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-400">เจ้าหน้าที่</p>
-                              <p className="font-medium text-white">{caseItem.assignedOfficer}</p>
-                            </div>
-                            <div>
-                              <p className="text-gray-400">สถานะ</p>
-                              <div className="flex items-center space-x-1 text-white">
-                                {getStatusIcon(caseItem.status)}
-                                <span>{getStatusText(caseItem.status)}</span>
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                  </div>
+                ) : error ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="text-center space-y-4">
+                      <p className="text-red-400 text-lg">{error}</p>
+                      <button
+                        onClick={fetchCases}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500"
+                      >
+                        ลองใหม่
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {filteredCases.map((caseItem) => (
+                      <div key={caseItem.case_id} className="border border-slate-600 rounded-lg p-4 hover:shadow-lg transition-shadow bg-slate-700">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="font-medium text-white">{caseItem.title}</h3>
+                              <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getCategoryColor(caseItem.case_type)}`}>
+                                <span>{getCategoryText(caseItem.case_type)}</span>
+                              </div>
+                              <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getPriorityColor(caseItem.priority)}`}>
+                                <span>{getPriorityText(caseItem.priority)}</span>
                               </div>
                             </div>
-                            <div>
-                              <p className="text-gray-400">หลักฐาน</p>
-                              <div className="flex items-center space-x-1 text-white">
-                                <FileText className="w-4 h-4" />
-                                <span>{caseItem.evidenceCount} รายการ</span>
+
+                            <p className="text-sm text-gray-300 mb-3">{caseItem.description}</p>
+
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <p className="text-gray-400">รหัสคดี</p>
+                                <p className="font-medium text-white">{caseItem.case_id}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-400">เจ้าหน้าที่</p>
+                                <p className="font-medium text-white">{caseItem.assignedOfficer}</p>
+                              </div>
+                              <div>
+                                <p className="text-gray-400">สถานะ</p>
+                                <div className="flex items-center space-x-1 text-white">
+                                  {getStatusIcon(caseItem.status)}
+                                  <span>{getStatusText(caseItem.status)}</span>
+                                </div>
+                              </div>
+                              <div>
+                                <p className="text-gray-400">หลักฐาน</p>
+                                <div className="flex items-center space-x-1 text-white">
+                                  <FileText className="w-4 h-4" />
+                                  <span>{caseItem.evidenceCount} รายการ</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="mt-3 flex items-center space-x-4 text-xs text-gray-400">
-                            <div className="flex items-center space-x-1">
-                              <Calendar className="w-3 h-3" />
-                              <span>สร้าง: {caseItem.createdDate}</span>
+                            <div className="mt-3 flex items-center space-x-4 text-xs text-gray-400">
+                              <div className="flex items-center space-x-1">
+                                <Calendar className="w-3 h-3" />
+                                <span>สร้าง: {caseItem.createdDate}</span>
+                              </div>
+                              <span>อัปเดต: {caseItem.lastUpdated}</span>
                             </div>
-                            <span>อัปเดต: {caseItem.lastUpdated}</span>
                           </div>
-                        </div>
 
-                        <div className="flex space-x-2 ml-4">
-                          <button className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors">
-                            ดูรายละเอียด
-                          </button>
-                          <button className="px-3 py-1 bg-green-700 text-green-200 rounded text-sm hover:bg-green-600 transition-colors">
-                            แก้ไข
-                          </button>
+                          <div className="flex space-x-2 ml-4">
+                            <button className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors">
+                              ดูรายละเอียด
+                            </button>
+                            <button className="px-3 py-1 bg-green-700 text-green-200 rounded text-sm hover:bg-green-600 transition-colors">
+                              แก้ไข
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
