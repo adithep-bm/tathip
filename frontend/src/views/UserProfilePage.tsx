@@ -125,7 +125,7 @@ const UserProfilePage = () => {
             <Header />
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                    < SideBar />
+                    <SideBar />
                     {/* Main Content */}
                     <div className="lg:col-span-3 space-y-6">
                         {/* Page Title with Frame */}
@@ -153,8 +153,8 @@ const UserProfilePage = () => {
                             </div>
                         )}
 
-                        {/* Main Content - Two Column Layout */}
-                        <div className="grid grid-cols-1 gap-6">
+                        {/* Main Content - Dynamic Layout */}
+                        <div className={`grid gap-6 transition-all duration-300 ${showPasswordForm ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
                             {/* Profile Information Card */}
                             <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-colors">
                                 <div className="flex items-center space-x-3 mb-4">
@@ -218,7 +218,6 @@ const UserProfilePage = () => {
                                     </div>
                                 </div>
 
-
                                 {/* Change Password Button */}
                                 <div className="mt-6 text-center">
                                     <button
@@ -233,16 +232,16 @@ const UserProfilePage = () => {
 
                             {/* Password Change Form - Show only when button is clicked */}
                             {showPasswordForm && (
-                                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-colors">
+                                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-colors animate-in slide-in-from-right duration-300">
                                     <div className="flex items-center space-x-3 mb-4">
                                         <Lock className="w-5 h-5 text-slate-300" />
                                         <h2 className="text-lg font-semibold text-white">เปลี่ยนรหัสผ่าน</h2>
                                     </div>
 
-                                    <div className="space-y-3">
+                                    <div className="space-y-4">
                                         {/* Current Password */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-400 mb-1">รหัสผ่านเดิม</label>
+                                            <label className="block text-sm font-medium text-slate-400 mb-2">รหัสผ่านเดิม</label>
                                             <div className="relative">
                                                 <input
                                                     type={showPasswords.current ? "text" : "password"}
@@ -254,7 +253,7 @@ const UserProfilePage = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => togglePasswordVisibility('current')}
-                                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
                                                 >
                                                     {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
@@ -263,7 +262,7 @@ const UserProfilePage = () => {
 
                                         {/* New Password */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-400 mb-1">รหัสผ่านใหม่</label>
+                                            <label className="block text-sm font-medium text-slate-400 mb-2">รหัสผ่านใหม่</label>
                                             <div className="relative">
                                                 <input
                                                     type={showPasswords.new ? "text" : "password"}
@@ -275,23 +274,23 @@ const UserProfilePage = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => togglePasswordVisibility('new')}
-                                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
                                                 >
                                                     {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
                                             </div>
 
-                                            {/* Password Strength Indicator - Compact */}
+                                            {/* Password Strength Indicator */}
                                             {newPassword && (
-                                                <div className="mt-1">
+                                                <div className="mt-2">
                                                     <div className="flex items-center space-x-2">
-                                                        <div className="flex-1 h-1.5 bg-slate-600 rounded-full overflow-hidden">
+                                                        <div className="flex-1 h-2 bg-slate-600 rounded-full overflow-hidden">
                                                             <div
                                                                 className={`h-full ${passwordStrength.color} transition-all duration-300`}
                                                                 style={{ width: `${(passwordStrength.strength / 4) * 100}%` }}
                                                             />
                                                         </div>
-                                                        <span className="text-xs text-slate-400">{passwordStrength.text}</span>
+                                                        <span className="text-xs text-slate-400 min-w-[60px]">{passwordStrength.text}</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -299,7 +298,7 @@ const UserProfilePage = () => {
 
                                         {/* Confirm Password */}
                                         <div>
-                                            <label className="block text-sm font-medium text-slate-400 mb-1">ยืนยันรหัสผ่านใหม่</label>
+                                            <label className="block text-sm font-medium text-slate-400 mb-2">ยืนยันรหัสผ่านใหม่</label>
                                             <div className="relative">
                                                 <input
                                                     type={showPasswords.confirm ? "text" : "password"}
@@ -311,32 +310,40 @@ const UserProfilePage = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => togglePasswordVisibility('confirm')}
-                                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
                                                 >
                                                     {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
                                             </div>
                                         </div>
 
-                                        {/* Password Requirements - Compact */}
-                                        <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3">
-                                            <p className="text-xs text-slate-400 mb-2">รหัสผ่านต้องมี:</p>
-                                            <div className="grid grid-cols-2 gap-1 text-xs text-slate-400">
-                                                <div className="flex items-center space-x-1">
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${newPassword.length >= 8 ? 'bg-green-500' : 'bg-slate-500'}`} />
-                                                    <span>8+ ตัวอักษร</span>
+                                        {/* Password Requirements */}
+                                        <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-4">
+                                            <p className="text-sm text-slate-400 mb-3">รหัสผ่านต้องมี:</p>
+                                            <div className="grid grid-cols-1 gap-2 text-sm">
+                                                <div className="flex items-center space-x-2">
+                                                    <div className={`w-2 h-2 rounded-full ${newPassword.length >= 8 ? 'bg-green-500' : 'bg-slate-500'}`} />
+                                                    <span className={`${newPassword.length >= 8 ? 'text-green-400' : 'text-slate-400'}`}>
+                                                        อย่างน้อย 8 ตัวอักษร
+                                                    </span>
                                                 </div>
-                                                <div className="flex items-center space-x-1">
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${/[A-Z]/.test(newPassword) ? 'bg-green-500' : 'bg-slate-500'}`} />
-                                                    <span>ตัวพิมพ์ใหญ่</span>
+                                                <div className="flex items-center space-x-2">
+                                                    <div className={`w-2 h-2 rounded-full ${/[A-Z]/.test(newPassword) ? 'bg-green-500' : 'bg-slate-500'}`} />
+                                                    <span className={`${/[A-Z]/.test(newPassword) ? 'text-green-400' : 'text-slate-400'}`}>
+                                                        ตัวพิมพ์ใหญ่ (A-Z)
+                                                    </span>
                                                 </div>
-                                                <div className="flex items-center space-x-1">
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${/[a-z]/.test(newPassword) ? 'bg-green-500' : 'bg-slate-500'}`} />
-                                                    <span>ตัวพิมพ์เล็ก</span>
+                                                <div className="flex items-center space-x-2">
+                                                    <div className={`w-2 h-2 rounded-full ${/[a-z]/.test(newPassword) ? 'bg-green-500' : 'bg-slate-500'}`} />
+                                                    <span className={`${/[a-z]/.test(newPassword) ? 'text-green-400' : 'text-slate-400'}`}>
+                                                        ตัวพิมพ์เล็ก (a-z)
+                                                    </span>
                                                 </div>
-                                                <div className="flex items-center space-x-1">
-                                                    <div className={`w-1.5 h-1.5 rounded-full ${/[^A-Za-z0-9]/.test(newPassword) ? 'bg-green-500' : 'bg-slate-500'}`} />
-                                                    <span>อักขระพิเศษ</span>
+                                                <div className="flex items-center space-x-2">
+                                                    <div className={`w-2 h-2 rounded-full ${/[^A-Za-z0-9]/.test(newPassword) ? 'bg-green-500' : 'bg-slate-500'}`} />
+                                                    <span className={`${/[^A-Za-z0-9]/.test(newPassword) ? 'text-green-400' : 'text-slate-400'}`}>
+                                                        อักขระพิเศษ (!@#$%^&*)
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
@@ -344,7 +351,7 @@ const UserProfilePage = () => {
                                         <button
                                             onClick={handleChangePassword}
                                             disabled={isLoading || !currentPassword || !newPassword || !confirmPassword}
-                                            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2 rounded-lg font-medium shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm"
+                                            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2.5 rounded-lg font-medium shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                                         >
                                             {isLoading ? (
                                                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
