@@ -30,8 +30,8 @@ function CreateCaseForm({ newCase, setNewCase, createCase, setShowCreateForm }: 
             onChange={(e) => setNewCase({ ...newCase, case_type: e.target.value as Case['case_type'] })}
             className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-purple-500 focus:border-transparent text-white"
           >
-            <option value="cybercrime">อาชญากรรมไซเบอร์</option>
-            <option value="financial">อาชญากรรมทางการเงิน</option>
+            <option value="cyber_crimes">อาชญากรรมไซเบอร์</option>
+            <option value="financial_crimes">อาชญากรรมทางการเงิน</option>
             <option value="gambling">การพนันออนไลน์</option>
             <option value="fraud">การหลอกลวง</option>
             <option value="other">อื่นๆ</option>

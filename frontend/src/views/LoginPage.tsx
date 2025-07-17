@@ -5,7 +5,7 @@ import { Lock, User } from 'lucide-react';
 
 const LoginPage: React.FC = () => {
   const [credentials, setCredentials] = useState({ username: '', password: '' });
-  const { action } = useAuth(); // <-- 3. Get actions from context
+  const { action, loading } = useAuth(); // <-- 3. Get actions from context
   const [error, setError] = useState('');
   const navigate = useNavigate(); // <-- 4. Initialize navigate
 
@@ -17,7 +17,7 @@ const LoginPage: React.FC = () => {
       return;
     }
     try {
-      action.login(credentials); // <-- 5. Call login action
+      await action.login(credentials); // <-- 5. Call login action
       console.log('Login successful');
       navigate('/case');
     } catch (err: any) {

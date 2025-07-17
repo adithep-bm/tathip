@@ -9,7 +9,7 @@ const ProtectedRoute = () => {
         return <LoadingSpinner />;
     }
 
-    return userInfo ? <Outlet /> : <Navigate to="/login" replace />;
+    return userInfo ? <Outlet /> : <Navigate to="/" replace />;
 };
 
 export default ProtectedRoute;
