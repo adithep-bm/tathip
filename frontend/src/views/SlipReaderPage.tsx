@@ -208,16 +208,19 @@ function SlipReaderPage() {
                   onDrop={handleDrop}
                 >
                   <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">อัปโหลดภาพเพื่อวิเคราะห์</h3>
+                  <h3 className="text-lg font-medium text-white mb-2">อัปโหลดไฟล์ ZIP</h3>
                   <p className="text-gray-300 mb-4">
                     {selectedCase ? 'ลากไฟล์มาวางหรือคลิกเพื่อเลือกไฟล์' : 'กรุณาเลือกคดีก่อนอัปโหลดไฟล์'}
                   </p>
+                  <p className="text-gray-300 mb-4">
+                    ลากไฟล์ ZIP มาวางหรือคลิกเพื่อเลือกไฟล์ (รองรับเฉพาะไฟล์ .zip)
+                  </p>
                   <input
                     type="file"
-                    accept="image/*"
+                    accept=".zip"
                     onChange={handleFileInput}
                     className="hidden"
-                    id="file-upload"
+                    id="zip-upload"
                     disabled={!selectedCase}
                   />
                   <label
@@ -228,7 +231,7 @@ function SlipReaderPage() {
                       }`}
                   >
                     <Upload className="w-4 h-4 mr-2" />
-                    เลือกไฟล์
+                    เลือกไฟล์ ZIP
                   </label>
                 </div>
               </div>

@@ -200,7 +200,8 @@ function IllegalImagePage() {
               {/* Upload Area */}
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
                 <div
-                  className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${dragActive ? 'border-emerald-500 bg-emerald-900/20' : 'border-slate-500 hover:border-emerald-400'
+                  className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${dragActive ? 'border-green-500 bg-green-900/20' :
+                    selectedCase ? 'border-slate-500 hover:border-green-400' : 'border-slate-600 opacity-50'
                     }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
@@ -208,7 +209,10 @@ function IllegalImagePage() {
                   onDrop={handleDrop}
                 >
                   <Archive className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">อัปโหลดไฟล์ ZIP จากโทรศัพท์</h3>
+                  <h3 className="text-lg font-medium text-white mb-2">อัปโหลดไฟล์ ZIP</h3>
+                  <p className="text-gray-300 mb-4">
+                    {selectedCase ? 'ลากไฟล์มาวางหรือคลิกเพื่อเลือกไฟล์' : 'กรุณาเลือกคดีก่อนอัปโหลดไฟล์'}
+                  </p>
                   <p className="text-gray-300 mb-4">
                     ลากไฟล์ ZIP มาวางหรือคลิกเพื่อเลือกไฟล์ (รองรับเฉพาะไฟล์ .zip)
                   </p>
@@ -218,10 +222,14 @@ function IllegalImagePage() {
                     onChange={handleFileInput}
                     className="hidden"
                     id="zip-upload"
+                    disabled={!selectedCase}
                   />
                   <label
-                    htmlFor="zip-upload"
-                    className="inline-flex items-center px-4 py-2 bg-emerald-700 text-white rounded-lg cursor-pointer hover:bg-emerald-600 transition-colors"
+                    htmlFor="file-upload"
+                    className={`inline-flex items-center px-4 py-2 rounded-lg cursor-pointer transition-colors ${selectedCase
+                      ? 'bg-green-700 text-white hover:bg-green-600'
+                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      }`}
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     เลือกไฟล์ ZIP
