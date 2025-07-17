@@ -27,7 +27,7 @@ class CaseType(str, Enum):
 
 
 class Case(BaseModel):
-    case_id: int
+    case_id: str
     title: str
     case_type: CaseType
     description: str | None = None
@@ -53,7 +53,7 @@ def read_cases() -> list[Case]:
     summary="Get a case by ID",
     description="Retrieve a specific case using its unique identifier.",
 )
-def read_case(case_id: int) -> Case:
+def read_case(case_id: str) -> Case:
     for case in cases_db:
         if case.case_id == case_id:
             return case

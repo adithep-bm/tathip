@@ -6,11 +6,16 @@ authors = [
     {name = "adithep.b",email = "adithepbaebmueann@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.13, <4.0"
 dependencies = [
-    "fastapi (>=0.116.0,<0.117.0)",
+    "fastapi[all] (>=0.116.1,<0.117.0)",
     "pydantic (>=2.11.7,<3.0.0)",
-    "fastapi-cli (>=0.0.8,<0.0.9)"
+    "fastapi-cli (>=0.0.8,<0.0.9)",
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "firebase-admin (>=7.0.0,<8.0.0)",
+    "python-dotenv (>=1.1.1,<2.0.0)",
+    "loguru (>=0.7.3,<0.8.0)",
+    "ultralytics (>=8.3.167,<9.0.0)"
 ]
 
 
