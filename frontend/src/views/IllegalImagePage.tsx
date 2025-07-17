@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Archive, Filter, FolderOpen, Upload } from "lucide-react";
+import { Archive, Filter, Upload } from "lucide-react";
 import axios from "../utils/axiosInstance";
 import Header from "../components/Header";
 import SideBar from "../components/SideBar";
@@ -41,11 +41,7 @@ function IllegalImagePage() {
   const [typeFilter, setTypeFilter] = useState<'all' | ClassifiedImage['imageType']>('all');
   const imageTypeOrder: ClassifiedImage['imageType'][] = ['transaction-slip', 'weapon', 'drug', 'pornography', 'other'];
 
-  const [cases, setCases] = useState([
-    { case_id: '1', title: 'คดีตัวอย่าง 1' },
-    { case_id: '2', title: 'คดีตัวอย่าง 2' },
-    { case_id: '3', title: 'คดีตัวอย่าง 3' },
-  ]);
+  const [cases, setCases] = useState<Case[]>([]);
 
   async function fetchCases() {
     try {
@@ -181,25 +177,6 @@ function IllegalImagePage() {
                     <p className="text-gray-300 mt-1">ระบบตรวจจับภาพผิดกฎหมายจากไฟล์ ZIP อัตโนมัติ</p>
                   </div>
                 </div>
-              </div>
-              {/* Case Selection */}
-              <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
-                <div className="flex items-center space-x-3 mb-4">
-                  <FolderOpen className="w-6 h-6 text-purple-400" />
-                  <h3 className="text-lg font-semibold text-white">เลือกคดีที่จะเพิ่มหลักฐาน</h3>
-                </div>
-                <select
-                  value={selectedCase}
-                  onChange={(e) => setSelectedCase(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
-                >
-                  <option value="">-- เลือกคดี --</option>
-                  {cases.map((caseItem) => (
-                    <option key={caseItem.case_id} value={caseItem.case_id}>
-                      {caseItem.case_id}: {caseItem.title}
-                    </option>
-                  ))}
-                </select>
               </div>
               {/* Upload Area */}
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
