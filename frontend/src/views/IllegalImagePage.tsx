@@ -41,11 +41,7 @@ function IllegalImagePage() {
   const [typeFilter, setTypeFilter] = useState<'all' | ClassifiedImage['imageType']>('all');
   const imageTypeOrder: ClassifiedImage['imageType'][] = ['transaction-slip', 'weapon', 'drug', 'pornography', 'other'];
 
-  const [cases, setCases] = useState([
-    { case_id: '1', title: 'คดีตัวอย่าง 1' },
-    { case_id: '2', title: 'คดีตัวอย่าง 2' },
-    { case_id: '3', title: 'คดีตัวอย่าง 3' },
-  ]);
+  const [cases, setCases] = useState<Case[]>([]);
 
   async function fetchCases() {
     try {

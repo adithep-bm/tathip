@@ -1,36 +1,34 @@
 import { useState, useEffect } from 'react';
-import { Upload, Search, CheckCircle, AlertCircle, FolderOpen } from 'lucide-react';
+import { Upload, FolderOpen, Search, CheckCircle, AlertCircle, FileText, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import axios from "../utils/axiosInstance";
 import Header from '../components/Header';
 import SideBar from '../components/SideBar';
 import HeaderSlip from '../components/SlipReader/HeaderSlip';
-import type { Case } from '../types/case';
+import type { Case, CaseType } from '../types/case';
 
-interface SlipData {
+interface Evidence {
   id: string;
   fileName: string;
   imageType: 'slip' | 'weapon' | 'drugs' | 'adult' | 'other';
-  accountName?: string;
-  accountNumber?: string;
-  bank?: string;
-  amount?: number;
-  date: string;
-  time: string;
   status: 'safe' | 'suspicious' | 'flagged';
-  confidence: number;
   caseId?: string;
 }
 
 function SlipReaderPage() {
+  const navigate = useNavigate();
   const [dragActive, setDragActive] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [selectedCase, setSelectedCase] = useState('');
-  const [results, setResults] = useState<SlipData[]>([]);
-  const [cases, setCases] = useState([
-    { case_id: '1', title: 'คดีตัวอย่าง 1' },
-    { case_id: '2', title: 'คดีตัวอย่าง 2' },
-    { case_id: '3', title: 'คดีตัวอย่าง 3' },
-  ]);
+  const [cases, setCases] = useState<Case[]>([]);
+  const [results, setResults] = useState<Evidence[]>([
+    {
+      id: '1',
+      fileName: 'slip_001.jpg',
+      imageType: 'slip',
+      status: 'suspicious',
+      caseId: undefined
+    }]);
 
   async function fetchCases() {
     try {
@@ -80,35 +78,92 @@ function SlipReaderPage() {
     // Simulate OCR processing
     setTimeout(() => {
       const imageTypes = ['slip', 'weapon', 'drugs', 'adult', 'other'];
-      const randomType = imageTypes[Math.floor(Math.random() * imageTypes.length)] as SlipData['imageType'];
+      const randomType = imageTypes[Math.floor(Math.random() * imageTypes.length)] as Evidence['imageType'];
 
-      const newResult: SlipData = {
+      const newResult: Evidence = {
         id: Date.now().toString(),
         fileName: file.name,
         imageType: randomType,
-        date: '2024-01-16',
-        time: '16:45',
         status: randomType === 'slip' ? 'suspicious' : randomType === 'other' ? 'safe' : 'flagged',
-        confidence: Math.floor(Math.random() * 20) + 80,
         caseId: selectedCase
       };
-
-      // Add slip-specific data if it's a slip
-      if (randomType === 'slip') {
-        newResult.accountName = 'นายจารุวิทย์ ลาภใหญ่';
-        newResult.accountNumber = '555-777-9999';
-        newResult.bank = 'ธนาคารกสิกรไทย';
-        newResult.amount = Math.floor(Math.random() * 500000) + 10000;
-      }
 
       setResults(prev => [newResult, ...prev]);
       setProcessing(false);
     }, 2000);
   };
 
+  const getCaseTypeText = (type: CaseType) => {
+    switch (type) {
+      case 'cyber_crimes': return 'อาชญากรรมไซเบอร์';
+      case 'financial_crimes': return 'อาชญากรรมทางการเงิน';
+      case 'gambling': return 'การพนัน';
+      case 'fraud': return 'การฉ้อโกง';
+      default: return 'ไม่ระบุ';
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'safe': return 'text-green-400 bg-green-900';
+      case 'suspicious': return 'text-orange-400 bg-orange-900';
+      case 'flagged': return 'text-red-400 bg-red-900';
+      default: return 'text-gray-400 bg-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'safe': return <CheckCircle className="w-4 h-4" />;
+      case 'suspicious': return <AlertCircle className="w-4 h-4" />;
+      case 'flagged': return <AlertCircle className="w-4 h-4" />;
+      default: return <FileText className="w-4 h-4" />;
+    }
+  };
+
+  const getImageTypeText = (type: string) => {
+    switch (type) {
+      case 'slip': return 'สลิปโอนเงิน';
+      case 'weapon': return 'อาวุธปืน';
+      case 'drugs': return 'ยาเสพติด';
+      case 'adult': return 'เนื้อหาผู้ใหญ่';
+      case 'other': return 'อื่นๆ';
+      default: return 'ไม่ทราบ';
+    }
+  };
+
+  const getImageTypeColor = (type: string) => {
+    switch (type) {
+      case 'slip': return 'text-blue-400 bg-blue-900';
+      case 'weapon': return 'text-red-400 bg-red-900';
+      case 'drugs': return 'text-purple-400 bg-purple-900';
+      case 'adult': return 'text-pink-400 bg-pink-900';
+      case 'other': return 'text-gray-400 bg-gray-800';
+      default: return 'text-gray-400 bg-gray-800';
+    }
+  };
+
+  // +++ จุดสำคัญ: สร้างข้อมูลที่รวมแล้วก่อน Render +++
+  const enrichedResults = results.map(result => {
+    const associatedCase = cases.find(c => c.case_id.toString() === result.caseId);
+    return {
+      fileName: result.fileName,
+      caseId: result.caseId,
+      caseTitle: associatedCase?.title || 'ไม่พบคดี',
+      caseType: associatedCase?.case_type,
+      evidenceCount: associatedCase?.evidenceCount,
+      id: result.id,
+      imageType: result.imageType
+    };
+  });
+
   useEffect(() => {
     fetchCases();
   }, []);
+
+  const handleViewCaseDetails = (caseId: string) => {
+    navigate(`/case/${caseId}`);
+  };
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -189,6 +244,72 @@ function SlipReaderPage() {
                   </div>
                 </div>
               )}
+              {/* Results List */}
+              <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
+                {/* Head Result*/}
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-white">Logs</h2>
+                  <div className="flex items-center space-x-2">
+                    <Search className="w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="ค้นหา..."
+                      className="px-3 py-1 bg-slate-700 border border-slate-600 rounded-md text-sm text-white placeholder-gray-400"
+                    />
+                  </div>
+                </div>
+                {/* --- Results Table (แก้ไขใหม่ทั้งหมด) --- */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left text-gray-300">
+                    <thead className="text-xs text-gray-400 uppercase bg-slate-700">
+                      <tr>
+                        <th scope="col" className="px-6 py-3">ชื่อไฟล์หลักฐาน</th>
+                        <th scope="col" className="px-6 py-3">ชื่อคดีที่เกี่ยวข้อง</th>
+                        <th scope="col" className="px-6 py-3">ประเภทคดี</th>
+                        <th scope="col" className="px-6 py-3">หลักฐานในคดี</th>
+                        <th scope="col" className="px-6 py-3"><span className="sr-only">Actions</span></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {enrichedResults.length > 0 ? (
+                        enrichedResults.map((item, index) => (
+                          <tr key={`${item.caseId}-${index}`} className="bg-slate-800 border-b border-slate-700 hover:bg-slate-600/50">
+                            <td className="px-6 py-4 font-medium text-white whitespace-nowrap">
+                              {item.fileName}
+                            </td>
+                            <td className="px-6 py-4">
+                              {item.caseTitle}
+                            </td>
+                            <td className="px-6 py-4">
+                              {item.caseType ? getCaseTypeText(item.caseType) : '-'}
+                            </td>
+                            <td className="px-6 py-4 text-center">
+                              <span className="inline-block bg-blue-900 text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                {item.evidenceCount ?? 'N/A'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-right">
+                              <button
+                                onClick={() => handleViewCaseDetails(item.caseId ?? '')}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-600 text-white font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                              >
+                                <span>ดูรายละเอียดเพิ่มเติม</span>
+                                <ChevronRight className="w-4 h-4" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr className="bg-slate-800 border-b border-slate-700">
+                          <td colSpan={5} className="text-center py-8 text-gray-400">
+                            ยังไม่มีผลการวิเคราะห์
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>
