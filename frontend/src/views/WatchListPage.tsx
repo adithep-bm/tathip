@@ -1,5 +1,6 @@
 import Header from "../components/Header";
 import SideBar from "../components/SideBar";
+import HeaderWatchList from "../components/WatchList/HeaderWatchList";
 
 function WatchListPage() {
   return (
@@ -12,6 +13,7 @@ function WatchListPage() {
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
             <div className="space-y-6">
+              <HeaderWatchList />
             </div>
           </div>
         </div>
