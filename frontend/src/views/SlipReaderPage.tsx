@@ -81,22 +81,36 @@ function SlipReaderPage() {
 
     setProcessing(true);
 
-    // Simulate OCR processing
-    setTimeout(() => {
-      const imageTypes = ['slip', 'weapon', 'drugs', 'adult', 'other'];
-      const randomType = imageTypes[Math.floor(Math.random() * imageTypes.length)] as Evidence['imageType'];
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('case_id', selectedCase);
 
-      const newResult: Evidence = {
-        id: Date.now().toString(),
-        fileName: file.name,
-        imageType: randomType,
-        status: randomType === 'slip' ? 'suspicious' : randomType === 'other' ? 'safe' : 'flagged',
-        caseId: selectedCase
-      };
-
-      setResults(prev => [newResult, ...prev]);
-      setProcessing(false);
-    }, 2000);
+    axios.post('/evidences/upload', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+      .then(async (response) => {
+        // Assume response.data contains evidence info with id
+        const evidenceId = response.data.id;
+        // Call OCR backend for this evidence
+        await axios.post(`/evidence/${evidenceId}/ocr`);
+        // Optionally, fetch updated evidence list or update results
+        setResults(prev => [
+          ...prev,
+          {
+            id: evidenceId,
+            fileName: file.name,
+            imageType: response.data.imageType || 'other',
+            status: response.data.status || 'safe',
+            caseId: selectedCase
+          }
+        ]);
+      })
+      .catch(() => {
+        alert('เกิดข้อผิดพลาดในการอัปโหลดหรือวิเคราะห์ไฟล์');
+      })
+      .finally(() => {
+        setProcessing(false);
+      });
   };
 
   const getCaseTypeText = (type: CaseType) => {
@@ -106,46 +120,6 @@ function SlipReaderPage() {
       case 'gambling': return 'การพนัน';
       case 'fraud': return 'การฉ้อโกง';
       default: return 'ไม่ระบุ';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'safe': return 'text-green-400 bg-green-900';
-      case 'suspicious': return 'text-orange-400 bg-orange-900';
-      case 'flagged': return 'text-red-400 bg-red-900';
-      default: return 'text-gray-400 bg-gray-800';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'safe': return <CheckCircle className="w-4 h-4" />;
-      case 'suspicious': return <AlertCircle className="w-4 h-4" />;
-      case 'flagged': return <AlertCircle className="w-4 h-4" />;
-      default: return <FileText className="w-4 h-4" />;
-    }
-  };
-
-  const getImageTypeText = (type: string) => {
-    switch (type) {
-      case 'slip': return 'สลิปโอนเงิน';
-      case 'weapon': return 'อาวุธปืน';
-      case 'drugs': return 'ยาเสพติด';
-      case 'adult': return 'เนื้อหาผู้ใหญ่';
-      case 'other': return 'อื่นๆ';
-      default: return 'ไม่ทราบ';
-    }
-  };
-
-  const getImageTypeColor = (type: string) => {
-    switch (type) {
-      case 'slip': return 'text-blue-400 bg-blue-900';
-      case 'weapon': return 'text-red-400 bg-red-900';
-      case 'drugs': return 'text-purple-400 bg-purple-900';
-      case 'adult': return 'text-pink-400 bg-pink-900';
-      case 'other': return 'text-gray-400 bg-gray-800';
-      default: return 'text-gray-400 bg-gray-800';
     }
   };
 

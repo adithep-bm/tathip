@@ -45,4 +45,5 @@ export interface Evidence {
   file_name: string; // ชื่อหลักฐาน
   url: string;
   description?: string; // อาจมีคำอธิบายเพิ่มเติมเกี่ยวกับหลักฐาน
+  uploadedAt: string; // วันที่อัพโหลดหลักฐาน รูปแบบ 'YYYY-MM-DD'
 }
