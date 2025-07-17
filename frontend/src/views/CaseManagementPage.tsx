@@ -17,7 +17,7 @@ function CaseManagementPage() {
     title: '',
     description: '',
     case_type: 'cyber_crimes' as Case['case_type'],
-    priority: 'medium' as Case['priority']
+    priority: 'medium' as Case['priority'],
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -48,13 +48,23 @@ function CaseManagementPage() {
   const createCase = async () => {
     if (!newCase.title || !newCase.description) return;
 
+    const caseId = `CASE-2024-${String(cases.length + 1).padStart(3, '0')}`;
+    const today = new Date().toISOString().split('T')[0];
     const casePayload = {
+      case_id: caseId,
       title: newCase.title,
       description: newCase.description,
       case_type: newCase.case_type,
+      priority: newCase.priority,
+      status: 'open', // Default status for new cases
+      createdDate: today,
+      lastUpdated: today,
+      assignedOfficer: 'Unassigned', // Default value
+      evidenceCount: 0 // Default value for new cases
     };
 
     try {
+      console.log('Creating case with payload:', casePayload);
       const response = await axios.post('/cases', casePayload);
       const newCaseData = response.data;
       // Add the new case to the top of the list
@@ -326,7 +336,7 @@ function CaseManagementPage() {
                                     <button className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors">
                                       ดูรายละเอียด
                                     </button>
-                                    <button className="px-3 py-1 bg-green-700 text-green-200 rounded text-sm hover:bg-green-600 transition-colors">
+                                    <button className="px-3 py-1 bg-yellow-600 text-green-200 rounded text-sm hover:bg-yellow-400 transition-colors">
                                       แก้ไข
                                     </button>
                                   </div>

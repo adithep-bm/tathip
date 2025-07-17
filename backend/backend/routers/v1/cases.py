@@ -27,7 +27,7 @@ class CaseType(str, Enum):
 
 
 class Case(BaseModel):
-    case_id: int
+    case_id: str
     title: str
     case_type: CaseType
     description: str | None = None
