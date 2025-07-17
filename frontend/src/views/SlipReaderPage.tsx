@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Upload, FolderOpen, Search, CheckCircle, AlertCircle, FileText, ChevronRight } from 'lucide-react';
+import { Upload, FolderOpen, Search, CheckCircle, AlertCircle, FileText, ChevronRight, FileSearch, Landmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from "../utils/axiosInstance";
 import Header from '../components/Header';
 import SideBar from '../components/SideBar';
 import HeaderSlip from '../components/SlipReader/HeaderSlip';
 import type { Case, CaseType } from '../types/case';
+import Modal from '../components/SlipReader/Modal';
 
 interface Evidence {
   id: string;
@@ -21,13 +22,18 @@ function SlipReaderPage() {
   const [processing, setProcessing] = useState(false);
   const [selectedCase, setSelectedCase] = useState('');
   const [cases, setCases] = useState<Case[]>([]);
+  // +++ NEW STATE for Modal +++
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalCaseId, setModalCaseId] = useState<string | null>(null);
+  const [modalEvidenceId, setModalEvidenceId] = useState<string | null>(null); // <<< ADDED: State to store the selected evidence ID
+
   const [results, setResults] = useState<Evidence[]>([
     {
       id: '1',
       fileName: 'slip_001.jpg',
       imageType: 'slip',
       status: 'suspicious',
-      caseId: undefined
+      caseId: '123'
     }]);
 
   async function fetchCases() {
@@ -157,13 +163,34 @@ function SlipReaderPage() {
     };
   });
 
+  // +++ MODIFIED: This function now opens the modal +++
+  const handleOpenActionModal = (caseId: string, evidenceId: string) => {
+    if (caseId && evidenceId) {
+      setModalCaseId(caseId);
+      setModalEvidenceId(evidenceId); // Set the evidence ID
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleNavigateToCase = () => {
+    if (modalCaseId) {
+      navigate(`/case/${modalCaseId}`);
+      setIsModalOpen(false); // Close modal after navigation
+    }
+  };
+
+  // +++ NEW: Function to navigate to Evidence page (assuming this route exists) +++
+  const handleNavigateToEvidence = () => {
+    if (modalEvidenceId) {
+      // Navigate to the specific evidence page, e.g., /evidence/169...
+      navigate(`/evidence/${modalEvidenceId}`);
+      setIsModalOpen(false); // Close modal after navigation
+    }
+  };
+
   useEffect(() => {
     fetchCases();
   }, []);
-
-  const handleViewCaseDetails = (caseId: string) => {
-    navigate(`/case/${caseId}`);
-  };
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -293,9 +320,11 @@ function SlipReaderPage() {
                               </span>
                             </td>
                             <td className="px-6 py-4 text-right">
+                              {/* +++ MODIFIED: Button now opens the modal +++ */}
                               <button
-                                onClick={() => handleViewCaseDetails(item.caseId ?? '')}
-                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-600 text-white font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                onClick={() => handleOpenActionModal(item.caseId ?? '', item.id)}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-600 text-white font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                                disabled={!item.caseId || !item.id}
                               >
                                 <span>ดูรายละเอียดเพิ่มเติม</span>
                                 <ChevronRight className="w-4 h-4" />
@@ -318,6 +347,32 @@ function SlipReaderPage() {
           </div>
         </div>
       </div>
+      {/* +++ NEW: Render the Modal here +++ */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="เลือกการกระทำ"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-300">คุณต้องการดูรายละเอียดส่วนไหนสำหรับคดี ID: <span className="font-bold text-amber-400">{modalCaseId}</span></p>
+          <div className="flex flex-col space-y-3">
+            <button
+              onClick={handleNavigateToEvidence}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <FileSearch className="w-5 h-5 text-green-400" />
+              <span>ดูรายละเอียดหลักฐานทั้งหมด</span>
+            </button>
+            <button
+              onClick={handleNavigateToCase}
+              className="w-full flex items-center justify-center gap-3 px-4 py-3 rounded-lg bg-slate-700 hover:bg-slate-600 text-white font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+              <Landmark className="w-5 h-5 text-purple-400" />
+              <span>ดูรายละเอียดภาพรวมคดี</span>
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

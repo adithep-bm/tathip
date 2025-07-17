@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Archive, Filter, FolderOpen, Upload } from "lucide-react";
+import { Archive, Filter, Upload } from "lucide-react";
 import axios from "../utils/axiosInstance";
 import Header from "../components/Header";
 import SideBar from "../components/SideBar";
