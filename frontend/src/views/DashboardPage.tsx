@@ -1,3 +1,4 @@
+import HeaderDashboard from "../components/DashBoard/HeaderDashboard";
 import Header from "../components/Header";
 import SideBar from "../components/SideBar";
 
@@ -12,6 +13,7 @@ function DashboardPage() {
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
             <div className="space-y-6">
+              <HeaderDashboard />
             </div>
           </div>
         </div>
