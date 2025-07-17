@@ -178,30 +178,10 @@ function IllegalImagePage() {
                   </div>
                 </div>
               </div>
-              {/* Case Selection */}
-              <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
-                <div className="flex items-center space-x-3 mb-4">
-                  <FolderOpen className="w-6 h-6 text-purple-400" />
-                  <h3 className="text-lg font-semibold text-white">เลือกคดีที่จะเพิ่มหลักฐาน</h3>
-                </div>
-                <select
-                  value={selectedCase}
-                  onChange={(e) => setSelectedCase(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-white"
-                >
-                  <option value="">-- เลือกคดี --</option>
-                  {cases.map((caseItem) => (
-                    <option key={caseItem.case_id} value={caseItem.case_id}>
-                      {caseItem.case_id}: {caseItem.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
               {/* Upload Area */}
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
                 <div
-                  className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${dragActive ? 'border-green-500 bg-green-900/20' :
-                    selectedCase ? 'border-slate-500 hover:border-green-400' : 'border-slate-600 opacity-50'
+                  className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${dragActive ? 'border-emerald-500 bg-emerald-900/20' : 'border-slate-500 hover:border-emerald-400'
                     }`}
                   onDragEnter={handleDrag}
                   onDragLeave={handleDrag}
@@ -209,10 +189,7 @@ function IllegalImagePage() {
                   onDrop={handleDrop}
                 >
                   <Archive className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-white mb-2">อัปโหลดไฟล์ ZIP</h3>
-                  <p className="text-gray-300 mb-4">
-                    {selectedCase ? 'ลากไฟล์มาวางหรือคลิกเพื่อเลือกไฟล์' : 'กรุณาเลือกคดีก่อนอัปโหลดไฟล์'}
-                  </p>
+                  <h3 className="text-lg font-medium text-white mb-2">อัปโหลดไฟล์ ZIP จากโทรศัพท์</h3>
                   <p className="text-gray-300 mb-4">
                     ลากไฟล์ ZIP มาวางหรือคลิกเพื่อเลือกไฟล์ (รองรับเฉพาะไฟล์ .zip)
                   </p>
@@ -222,14 +199,10 @@ function IllegalImagePage() {
                     onChange={handleFileInput}
                     className="hidden"
                     id="zip-upload"
-                    disabled={!selectedCase}
                   />
                   <label
-                    htmlFor="file-upload"
-                    className={`inline-flex items-center px-4 py-2 rounded-lg cursor-pointer transition-colors ${selectedCase
-                      ? 'bg-green-700 text-white hover:bg-green-600'
-                      : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                      }`}
+                    htmlFor="zip-upload"
+                    className="inline-flex items-center px-4 py-2 bg-emerald-700 text-white rounded-lg cursor-pointer hover:bg-emerald-600 transition-colors"
                   >
                     <Upload className="w-4 h-4 mr-2" />
                     เลือกไฟล์ ZIP
