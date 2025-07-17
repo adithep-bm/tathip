@@ -154,9 +154,9 @@ const UserProfilePage = () => {
                         )}
 
                         {/* Main Content - Dynamic Layout */}
-                        <div className={`grid gap-6 transition-all duration-300 ${showPasswordForm ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
+                        <div className={`grid gap-6 transition-all duration-700 ease-out ${showPasswordForm ? 'grid-cols-1 xl:grid-cols-2' : 'grid-cols-1'}`}>
                             {/* Profile Information Card */}
-                            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-colors">
+                            <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-all duration-500 ease-out transform">
                                 <div className="flex items-center space-x-3 mb-4">
                                     <User className="w-5 h-5 text-slate-300" />
                                     <h2 className="text-lg font-semibold text-white">ข้อมูลส่วนตัว</h2>
@@ -222,9 +222,9 @@ const UserProfilePage = () => {
                                 <div className="mt-6 text-center">
                                     <button
                                         onClick={() => setShowPasswordForm(!showPasswordForm)}
-                                        className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2 rounded-lg font-medium shadow-md transition-all text-sm"
+                                        className="inline-flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2 rounded-lg font-medium shadow-md transition-all duration-300 ease-in-out hover:shadow-lg hover:scale-105 text-sm"
                                     >
-                                        <Settings className="w-4 h-4" />
+                                        <Settings className={`w-4 h-4 transition-transform duration-300 ${showPasswordForm ? 'rotate-180' : 'rotate-0'}`} />
                                         <span>{showPasswordForm ? 'ยกเลิกการเปลี่ยนรหัสผ่าน' : 'เปลี่ยนรหัสผ่าน'}</span>
                                     </button>
                                 </div>
@@ -232,7 +232,7 @@ const UserProfilePage = () => {
 
                             {/* Password Change Form - Show only when button is clicked */}
                             {showPasswordForm && (
-                                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-colors animate-in slide-in-from-right duration-300">
+                                <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700/50 p-6 hover:border-slate-600/50 transition-all duration-500 ease-out animate-in slide-in-from-right-full fade-in duration-700 transform">
                                     <div className="flex items-center space-x-3 mb-4">
                                         <Lock className="w-5 h-5 text-slate-300" />
                                         <h2 className="text-lg font-semibold text-white">เปลี่ยนรหัสผ่าน</h2>
@@ -248,12 +248,12 @@ const UserProfilePage = () => {
                                                     placeholder="กรอกรหัสผ่านเดิม"
                                                     value={currentPassword}
                                                     onChange={(e) => setCurrentPassword(e.target.value)}
-                                                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all text-sm"
+                                                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all duration-200 ease-in-out text-sm"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => togglePasswordVisibility('current')}
-                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-all duration-200 ease-in-out hover:scale-110"
                                                 >
                                                     {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
@@ -269,12 +269,12 @@ const UserProfilePage = () => {
                                                     placeholder="กรอกรหัสผ่านใหม่"
                                                     value={newPassword}
                                                     onChange={(e) => setNewPassword(e.target.value)}
-                                                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all text-sm"
+                                                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all duration-200 ease-in-out text-sm"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => togglePasswordVisibility('new')}
-                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-all duration-200 ease-in-out hover:scale-110"
                                                 >
                                                     {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
@@ -282,15 +282,15 @@ const UserProfilePage = () => {
 
                                             {/* Password Strength Indicator */}
                                             {newPassword && (
-                                                <div className="mt-2">
+                                                <div className="mt-1 animate-in fade-in duration-300">
                                                     <div className="flex items-center space-x-2">
                                                         <div className="flex-1 h-2 bg-slate-600 rounded-full overflow-hidden">
                                                             <div
-                                                                className={`h-full ${passwordStrength.color} transition-all duration-300`}
+                                                                className={`h-full ${passwordStrength.color} transition-all duration-500 ease-out`}
                                                                 style={{ width: `${(passwordStrength.strength / 4) * 100}%` }}
                                                             />
                                                         </div>
-                                                        <span className="text-xs text-slate-400 min-w-[60px]">{passwordStrength.text}</span>
+                                                        <span className="text-xs text-slate-400 transition-colors duration-300">{passwordStrength.text}</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -305,12 +305,12 @@ const UserProfilePage = () => {
                                                     placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
                                                     value={confirmPassword}
                                                     onChange={(e) => setConfirmPassword(e.target.value)}
-                                                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all text-sm"
+                                                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500/20 transition-all duration-200 ease-in-out text-sm"
                                                 />
                                                 <button
                                                     type="button"
                                                     onClick={() => togglePasswordVisibility('confirm')}
-                                                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-colors"
+                                                    className="absolute right-2 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-300 transition-all duration-200 ease-in-out hover:scale-110"
                                                 >
                                                     {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                                                 </button>
@@ -351,7 +351,7 @@ const UserProfilePage = () => {
                                         <button
                                             onClick={handleChangePassword}
                                             disabled={isLoading || !currentPassword || !newPassword || !confirmPassword}
-                                            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2.5 rounded-lg font-medium shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                                            className="w-full bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white px-4 py-2 rounded-lg font-medium shadow-md transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 text-sm hover:shadow-lg hover:scale-[1.02]"
                                         >
                                             {isLoading ? (
                                                 <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
