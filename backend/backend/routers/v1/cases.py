@@ -75,7 +75,7 @@ async def create_case(case: Case) -> Case:
     summary="Update a case",
     description="Update an existing case using its unique identifier.",
 )
-async def update_case(case_id: int, case: Case) -> Case:
+async def update_case(case_id: str, case: Case) -> Case:
     for idx, existing_case in enumerate(cases_db):
         if existing_case.case_id == case_id:
             cases_db[idx] = case
