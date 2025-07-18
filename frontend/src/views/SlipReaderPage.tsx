@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, FolderOpen, Search, CheckCircle, AlertCircle, FileText, ChevronRight, FileSearch, Landmark } from 'lucide-react';
+import { Upload, FolderOpen, Search, ChevronRight, FileSearch, Landmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from "../utils/axiosInstance";
 import Header from '../components/Header';
@@ -73,7 +73,7 @@ function SlipReaderPage() {
     }
   };
 
-  const processFile = (file: File) => {
+  const processFile = async (file: File) => {
     if (!selectedCase) {
       alert('กรุณาเลือกคดีที่จะเพิ่มหลักฐาน');
       return;
@@ -85,32 +85,31 @@ function SlipReaderPage() {
     formData.append('file', file);
     formData.append('case_id', selectedCase);
 
-    axios.post('/evidences/upload', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
-      .then(async (response) => {
-        // Assume response.data contains evidence info with id
-        const evidenceId = response.data.id;
-        // Call OCR backend for this evidence
-        await axios.post(`/evidence/${evidenceId}/ocr`);
-        // Optionally, fetch updated evidence list or update results
-        setResults(prev => [
-          ...prev,
-          {
-            id: evidenceId,
-            fileName: file.name,
-            imageType: response.data.imageType || 'other',
-            status: response.data.status || 'safe',
-            caseId: selectedCase
-          }
-        ]);
-      })
-      .catch(() => {
-        alert('เกิดข้อผิดพลาดในการอัปโหลดหรือวิเคราะห์ไฟล์');
-      })
-      .finally(() => {
-        setProcessing(false);
+    try {
+      // Upload evidence
+      const response = await axios.post('/evidences/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
+
+      const evidenceId = response.data.id;
+      // Call OCR backend for this evidence
+      await axios.post(`/evidence/${evidenceId}/ocr`);
+      // Optionally, fetch updated evidence list or update results
+      setResults(prev => [
+        ...prev,
+        {
+          id: evidenceId,
+          fileName: file.name,
+          imageType: response.data.imageType || 'other',
+          status: response.data.status || 'safe',
+          caseId: selectedCase
+        }
+      ]);
+    } catch (error) {
+      alert('เกิดข้อผิดพลาดในการอัปโหลดหรือวิเคราะห์ไฟล์');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const getCaseTypeText = (type: CaseType) => {
