@@ -14,6 +14,7 @@ import WatchListPage from "./views/WatchListPage";
 import AlertSystemPage from "./views/AlertSystemPage";
 import CaseDetailPage from "./views/CaseDetailPage";
 import EvidenceDetailPage from "./views/EvidenceDetailPage";
+import WebCrawlerDetailPage from "./views/WebCrawlerDetailPage";
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
           <Route path="/slip" element={<SlipReaderPage />} />
           <Route path="/illegal-images" element={<IllegalImagePage />} />
           <Route path="/crawler" element={<WebCrawlerPage />} />
+          <Route path="/crawler/:id" element={<WebCrawlerDetailPage />} />
           <Route path="/user-profile" element={<UserProfilePage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/reports" element={<ReportsPage />} />
