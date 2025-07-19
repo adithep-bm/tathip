@@ -28,4 +28,4 @@ dist-ssr
 __pycache__
 *.pyc
 service-account.json
-.env
+*.env
