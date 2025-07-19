@@ -1,10 +1,22 @@
 # /main.py
+import os
+from dotenv import load_dotenv
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+
+from .configs.logging_config import setup_logging
 from . import routers
 
-from .database import create_db_and_tables
+from .configs.database import create_db_and_tables
+from .configs.firebase import initialize_firebase
+from .ml.prediction import YoloPredictionService # หรือ Service อื่นๆ
+
+from .configs.registry import models
+
+load_dotenv()
+setup_logging()
+
 # --- Application Setup ---
 app = FastAPI(
     title="Superheroes API",
@@ -20,6 +32,12 @@ def on_startup():
     It creates the database and tables.
     """
     create_db_and_tables()
+    initialize_firebase()
+
+    slip_classifier_path = os.getenv("YOLO_SLIP_CLASSIFIER_PATH")
+    if slip_classifier_path:
+        models["slip_classifier"] = YoloPredictionService(model_path=slip_classifier_path)
+    
 
 # --- Middleware ---
 origins = [

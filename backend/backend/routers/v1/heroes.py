@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlmodel import select
 from typing import List
 
-from ...database import SessionDep  # นำเข้า Dependency จากไฟล์ database.py
+from ...configs.database import SessionDep  # นำเข้า Dependency จากไฟล์ database.py
 from ...models import Hero          # นำเข้า Model จากไฟล์ models.py
 
 # สร้าง Router instance
