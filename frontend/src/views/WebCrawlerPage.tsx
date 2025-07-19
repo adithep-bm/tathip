@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import SideBar from "../components/SideBar";
 import Header from "../components/Header";
 import {
@@ -46,8 +45,6 @@ interface SearchSession {
 }
 
 function WebCrawlerPage() {
-  const navigate = useNavigate();
-
   // ฟังก์ชันสำหรับโหลดข้อมูลจาก localStorage
   const loadFromStorage = () => {
     const savedSessions = localStorage.getItem("crawlerSessions");
@@ -88,6 +85,17 @@ function WebCrawlerPage() {
     x: 0,
     y: 0,
     url: "",
+  });
+
+  // State สำหรับ preview modal
+  const [previewModal, setPreviewModal] = useState<{
+    visible: boolean;
+    url: string;
+    title: string;
+  }>({
+    visible: false,
+    url: "",
+    title: "",
   });
 
   // บันทึกข้อมูลลง localStorage เมื่อมีการเปลี่ยนแปลง
@@ -166,6 +174,23 @@ function WebCrawlerPage() {
   const openInNewTab = () => {
     window.open(contextMenu.url, "_blank", "noopener,noreferrer");
     setContextMenu({ visible: false, x: 0, y: 0, url: "" });
+  };
+
+  // ฟังก์ชันเปิด/ปิด preview modal
+  const openPreview = (url: string, title: string) => {
+    setPreviewModal({
+      visible: true,
+      url: url,
+      title: title,
+    });
+  };
+
+  const closePreview = () => {
+    setPreviewModal({
+      visible: false,
+      url: "",
+      title: "",
+    });
   };
 
   // ฟังก์ชันสร้างชื่อ query ที่ไม่ซ้ำกัน
@@ -294,7 +319,7 @@ function WebCrawlerPage() {
     const foundKeywords = commonTerms.filter((term) =>
       text.toLowerCase().includes(term.toLowerCase())
     );
-    return foundKeywords.length > 0 ? foundKeywords : ["ทั่วไป"];
+    return foundKeywords.length > 0 ? foundKeywords : ["ต้องสงสัย"];
   };
 
   // ฟังก์ชันเริ่ม/หยุด crawler
@@ -384,8 +409,8 @@ function WebCrawlerPage() {
     }
   };
 
-  const handleViewDetails = (id: string) => {
-    navigate(`/crawler/${id}`);
+  const handleViewDetails = (url: string, title: string) => {
+    openPreview(url, title);
   };
 
   return (
@@ -707,7 +732,11 @@ function WebCrawlerPage() {
                                             (keyword, index) => (
                                               <span
                                                 key={index}
-                                                className="px-1.5 py-0.5 bg-slate-600 text-gray-300 rounded text-xs border border-slate-500"
+                                                className={`px-1.5 py-0.5 rounded text-xs border ${
+                                                  keyword === "ต้องสงสัย"
+                                                    ? "bg-yellow-600 text-yellow-100 border-yellow-500"
+                                                    : "bg-slate-600 text-gray-300 border-slate-500"
+                                                }`}
                                               >
                                                 {keyword}
                                               </span>
@@ -721,7 +750,10 @@ function WebCrawlerPage() {
                                       <div className="ml-3">
                                         <button
                                           onClick={() =>
-                                            handleViewDetails(result.id)
+                                            handleViewDetails(
+                                              result.url,
+                                              result.title
+                                            )
                                           }
                                           className="px-2 py-1 bg-blue-700 text-blue-200 rounded text-xs hover:bg-blue-600 transition-colors"
                                         >
@@ -769,6 +801,57 @@ function WebCrawlerPage() {
             <ExternalLink className="w-4 h-4" />
             <span>เปิดในแท็บใหม่</span>
           </button>
+        </div>
+      )}
+
+      {/* Preview Modal */}
+      {previewModal.visible && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-lg shadow-xl w-full max-w-6xl h-5/6 flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b border-slate-600">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-white truncate">
+                  {previewModal.title}
+                </h3>
+                <p className="text-sm text-blue-400 truncate">
+                  {previewModal.url}
+                </p>
+              </div>
+              <div className="flex items-center space-x-2 ml-4">
+                <button
+                  onClick={() =>
+                    window.open(
+                      previewModal.url,
+                      "_blank",
+                      "noopener,noreferrer"
+                    )
+                  }
+                  className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors flex items-center space-x-1"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  <span>เปิดในแท็บใหม่</span>
+                </button>
+                <button
+                  onClick={closePreview}
+                  className="px-3 py-1 bg-red-700 text-red-200 rounded text-sm hover:bg-red-600 transition-colors flex items-center space-x-1"
+                >
+                  <X className="w-4 h-4" />
+                  <span>ปิด</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Content */}
+            <div className="flex-1 p-4">
+              <iframe
+                src={previewModal.url}
+                className="w-full h-full border border-slate-600 rounded"
+                title={previewModal.title}
+                sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>
