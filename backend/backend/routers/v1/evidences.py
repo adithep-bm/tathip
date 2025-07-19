@@ -20,11 +20,6 @@ class Evidence(BaseModel):
   description: str | None = None
   case_id: int
 
-# --- Pydantic Models ---
-class ClassificationResult(BaseModel):
-    filename: str
-    classification: str
-
 # Model ใหม่สำหรับ Response ของ Endpoint นี้โดยเฉพาะ
 class UploadSlipsResponse(BaseModel):
     message: str
@@ -37,7 +32,6 @@ evidence_db: list[Evidence] = []
     "/upload",
     summary="Upload ZIP, classify, and return the Firebase URL of slips-only ZIP",
     response_model=UploadSlipsResponse, # <-- ระบุ Model สำหรับ Response
-    tags=["Classification"]
 )
 async def upload_and_get_url(
     file: UploadFile = File(..., description="A ZIP file with images to classify.")

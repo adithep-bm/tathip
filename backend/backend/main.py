@@ -14,6 +14,14 @@ from .ml.prediction import YoloPredictionService # หรือ Service อื�
 
 from .configs.registry import models
 
+from fastapi import FastAPI, File, UploadFile
+import torch
+import easyocr
+import numpy as np
+from PIL import Image   
+
+app = FastAPI()
+
 load_dotenv()
 setup_logging()
 
@@ -42,7 +50,7 @@ def on_startup():
 # --- Middleware ---
 origins = [
     "http://localhost",
-    "http://localhost:5173",
+    "http://172.20.10.3:5173",
 ]
 
 app.add_middleware(
