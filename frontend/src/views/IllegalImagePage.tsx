@@ -41,20 +41,13 @@ interface AnalysisSession {
 interface CategoryFolder {
   weapon: ClassificationResult[]; // อาวุธ
   drug: ClassificationResult[]; // ยาเสพติด
-  pornography: ClassificationResult[]; // ภาพลามก
-  nudity: ClassificationResult[]; // ภาพเปลือย
+  pornography: ClassificationResult[]; // ภาพลามก/เปลือย
   vape: ClassificationResult[]; // บุหรี่ไฟฟ้า
   other: ClassificationResult[]; // อื่นๆ
 }
 
 type SuspicionLevel = "watch" | "suspicious" | "high-risk" | "irrelevant";
-type CategoryType =
-  | "weapon"
-  | "drug"
-  | "pornography"
-  | "nudity"
-  | "vape"
-  | "other";
+type CategoryType = "weapon" | "drug" | "pornography" | "vape" | "other";
 
 function IllegalImagePage() {
   const [dragActive, setDragActive] = useState(false);
@@ -104,10 +97,13 @@ function IllegalImagePage() {
       return "weapon";
     if (lowerClass.includes("drug") || lowerClass.includes("narcotic"))
       return "drug";
-    if (lowerClass.includes("porn") || lowerClass.includes("sexual"))
+    if (
+      lowerClass.includes("porn") ||
+      lowerClass.includes("sexual") ||
+      lowerClass.includes("nude") ||
+      lowerClass.includes("nudity")
+    )
       return "pornography";
-    if (lowerClass.includes("nude") || lowerClass.includes("nudity"))
-      return "nudity";
     if (
       lowerClass.includes("vape") ||
       lowerClass.includes("e-cigarette") ||
@@ -157,9 +153,7 @@ function IllegalImagePage() {
       case "drug":
         return "bg-purple-900/30 border-purple-700/50"; // ยาเสพติด - สีม่วง
       case "pornography":
-        return "bg-pink-900/30 border-pink-700/50"; // ภาพลามก - สีชมพู
-      case "nudity":
-        return "bg-orange-900/30 border-orange-700/50"; // ภาพเปลือย - สีส้ม
+        return "bg-pink-900/30 border-pink-700/50"; // ภาพลามก/เปลือย - สีชมพู
       case "vape":
         return "bg-cyan-900/30 border-cyan-700/50"; // บุหรี่ไฟฟ้า - สีฟ้า
       case "other":
@@ -195,7 +189,6 @@ function IllegalImagePage() {
         weapon: [] as ClassificationResult[],
         drug: [] as ClassificationResult[],
         pornography: [] as ClassificationResult[],
-        nudity: [] as ClassificationResult[],
         vape: [] as ClassificationResult[],
         other: [] as ClassificationResult[],
       }
@@ -409,6 +402,11 @@ function IllegalImagePage() {
     setSelectedFile(null);
     setResult(null);
     setFilter("all");
+    setCategoryFilter("all");
+    setSuspicionFilter("all");
+    setProcessing(false);
+    setProgress(0);
+    setProgressText("");
   };
 
   return (
@@ -423,97 +421,21 @@ function IllegalImagePage() {
             <div className="space-y-6">
               {/* Header */}
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Archive className="w-8 h-8 text-green-400" />
                   <div>
-                    <h1 className="text-2xl font-bold text-white mb-2">
-                      ระบบแยกภาพผิดกฎหมาย
+                    <h1 className="text-2xl font-bold text-white">
+                      Illegal Image Detection
                     </h1>
-                    <p className="text-gray-400">
+                    <p className="text-gray-300 mt-1">
                       อัปโหลดไฟล์ ZIP
                       หรือภาพเดี่ยวเพื่อแยกภาพที่ผิดกฎหมายออกจากภาพปกติ
                     </p>
                   </div>
-                  <Archive className="w-12 h-12 text-blue-500" />
                 </div>
               </div>
 
-              {/* Filter Options */}
-              <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
-                <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
-                  <Filter className="w-5 h-5 mr-2" />
-                  ตัวกรองผลลัพธ์
-                </h2>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* สถานะ */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      สถานะ
-                    </label>
-                    <select
-                      value={filter}
-                      onChange={(e) =>
-                        setFilter(e.target.value as "all" | "legal" | "illegal")
-                      }
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">ทั้งหมด</option>
-                      <option value="legal">ภาพปกติ</option>
-                      <option value="illegal">ภาพผิดกฎหมาย</option>
-                    </select>
-                  </div>
-
-                  {/* หมวดหมู่ */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      หมวดหมู่
-                    </label>
-                    <select
-                      value={categoryFilter}
-                      onChange={(e) =>
-                        setCategoryFilter(
-                          e.target.value as CategoryType | "all"
-                        )
-                      }
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">ทั้งหมด</option>
-                      <option value="weapon">อาวุธ</option>
-                      <option value="drug">ยาเสพติด</option>
-                      <option value="pornography">ภาพลามก</option>
-                      <option value="nudity">ภาพเปลือย</option>
-                      <option value="vape">บุหรี่ไฟฟ้า</option>
-                      <option value="other">อื่นๆ</option>
-                    </select>
-                  </div>
-
-                  {/* ระดับความน่าสงสัย */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      ระดับความน่าสงสัย
-                    </label>
-                    <select
-                      value={suspicionFilter}
-                      onChange={(e) =>
-                        setSuspicionFilter(
-                          e.target.value as SuspicionLevel | "all"
-                        )
-                      }
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="all">ทั้งหมด</option>
-                      <option value="high-risk">ต้องสงสัย (&gt;90%)</option>
-                      <option value="suspicious">น่าสงสัย (80-90%)</option>
-                      <option value="watch">เฝ้าระวัง (60-70%)</option>
-                      <option value="irrelevant">
-                        ไม่เกี่ยวข้อง (&lt;60%)
-                      </option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Folder System */}
+              {/* Folder System - ประวัติการวิเคราะห์ */}
               {sessions.length > 0 && (
                 <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
                   <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
@@ -590,8 +512,7 @@ function IllegalImagePage() {
                                   const categoryName = {
                                     weapon: "อาวุธ",
                                     drug: "ยาเสพติด",
-                                    pornography: "ภาพลามก",
-                                    nudity: "ภาพเปลือย",
+                                    pornography: "ภาพลามก/เปลือย",
                                     vape: "บุหรี่ไฟฟ้า",
                                     other: "อื่นๆ",
                                   }[category as CategoryType];
@@ -616,6 +537,9 @@ function IllegalImagePage() {
                                                 getSuspicionLevel(
                                                   item.confidence
                                                 );
+                                              const isIllegal =
+                                                item.classification.toLowerCase() !==
+                                                "other";
                                               return (
                                                 <div
                                                   key={idx}
@@ -624,15 +548,17 @@ function IllegalImagePage() {
                                                   <span className="text-gray-300 truncate">
                                                     {item.filename}
                                                   </span>
-                                                  <span
-                                                    className={`px-2 py-1 rounded text-xs ${getSuspicionColor(
-                                                      suspicionLevel
-                                                    )}`}
-                                                  >
-                                                    {getSuspicionText(
-                                                      suspicionLevel
-                                                    )}
-                                                  </span>
+                                                  {isIllegal && (
+                                                    <span
+                                                      className={`px-2 py-1 rounded text-xs ${getSuspicionColor(
+                                                        suspicionLevel
+                                                      )}`}
+                                                    >
+                                                      {getSuspicionText(
+                                                        suspicionLevel
+                                                      )}
+                                                    </span>
+                                                  )}
                                                 </div>
                                               );
                                             }
@@ -662,83 +588,83 @@ function IllegalImagePage() {
                   อัปโหลดไฟล์
                 </h2>
 
-                {!result && (
-                  <div
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                      dragActive
-                        ? "border-blue-500 bg-blue-500/10"
-                        : "border-gray-600 hover:border-gray-500"
-                    }`}
-                    onDragEnter={handleDrag}
-                    onDragLeave={handleDrag}
-                    onDragOver={handleDrag}
-                    onDrop={handleDrop}
-                  >
-                    {processing ? (
-                      <div className="space-y-6">
-                        {/* Progress Bar */}
-                        <div className="w-full max-w-md mx-auto">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-gray-300">
-                              {progressText}
-                            </span>
-                            <span className="text-sm text-blue-400 font-medium">
-                              {progress}%
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-700 rounded-full h-3">
-                            <div
-                              className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out"
-                              style={{ width: `${progress}%` }}
-                            ></div>
-                          </div>
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    dragActive
+                      ? "border-blue-500 bg-blue-500/10"
+                      : "border-gray-600 hover:border-gray-500"
+                  }`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  {processing ? (
+                    <div className="space-y-6">
+                      {/* Progress Bar */}
+                      <div className="w-full max-w-md mx-auto">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-gray-300">
+                            {progressText}
+                          </span>
+                          <span className="text-sm text-blue-400 font-medium">
+                            {progress}%
+                          </span>
                         </div>
-
-                        {/* Animation dots */}
-                        <div className="flex justify-center space-x-1">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                        <div className="w-full bg-gray-700 rounded-full h-3">
                           <div
-                            className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
-                            style={{ animationDelay: "0.1s" }}
-                          ></div>
-                          <div
-                            className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
-                            style={{ animationDelay: "0.2s" }}
+                            className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${progress}%` }}
                           ></div>
                         </div>
+                      </div>
 
-                        <p className="text-gray-400 text-center">
-                          กำลังประมวลผลไฟล์ กรุณารอสักครู่...
+                      {/* Animation dots */}
+                      <div className="flex justify-center space-x-1">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
+                        <div
+                          className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.1s" }}
+                        ></div>
+                        <div
+                          className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        ></div>
+                      </div>
+
+                      <p className="text-gray-400 text-center">
+                        กำลังประมวลผลไฟล์ กรุณารอสักครู่...
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <Upload className="w-12 h-12 mx-auto text-gray-400" />
+                      <div>
+                        <p className="text-lg text-gray-300 mb-2">
+                          {result
+                            ? "อัปโหลดไฟล์ใหม่เพื่อวิเคราะห์เพิ่มเติม"
+                            : "ลากไฟล์มาวางที่นี่ หรือ คลิกเพื่อเลือกไฟล์"}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          รองรับไฟล์ ZIP หรือไฟล์ภาพ (JPG, PNG, GIF, BMP)
                         </p>
                       </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <Upload className="w-12 h-12 mx-auto text-gray-400" />
-                        <div>
-                          <p className="text-lg text-gray-300 mb-2">
-                            ลากไฟล์มาวางที่นี่ หรือ คลิกเพื่อเลือกไฟล์
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            รองรับไฟล์ ZIP หรือไฟล์ภาพ (JPG, PNG, GIF, BMP)
-                          </p>
-                        </div>
-                        <input
-                          type="file"
-                          accept=".zip,.jpg,.jpeg,.png,.gif,.bmp"
-                          onChange={handleChange}
-                          className="hidden"
-                          id="file-upload"
-                        />
-                        <label
-                          htmlFor="file-upload"
-                          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
-                        >
-                          เลือกไฟล์
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                )}
+                      <input
+                        type="file"
+                        accept=".zip,.jpg,.jpeg,.png,.gif,.bmp"
+                        onChange={handleChange}
+                        className="hidden"
+                        id="file-upload"
+                      />
+                      <label
+                        htmlFor="file-upload"
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                      >
+                        {result ? "เลือกไฟล์ใหม่" : "เลือกไฟล์"}
+                      </label>
+                    </div>
+                  )}
+                </div>
 
                 {selectedFile && !processing && (
                   <div className="mt-4 p-4 bg-slate-700 rounded-lg">
@@ -863,6 +789,87 @@ function IllegalImagePage() {
                       </div>
                     </div>
 
+                    {/* Filter Options */}
+                    <div className="bg-slate-700/50 rounded-lg p-4 mb-4">
+                      <h4 className="text-md font-medium text-white mb-3 flex items-center">
+                        <Filter className="w-4 h-4 mr-2" />
+                        ตัวกรองผลลัพธ์
+                      </h4>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        {/* สถานะ */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            สถานะ
+                          </label>
+                          <select
+                            value={filter}
+                            onChange={(e) =>
+                              setFilter(
+                                e.target.value as "all" | "legal" | "illegal"
+                              )
+                            }
+                            className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="all">ทั้งหมด</option>
+                            <option value="legal">ภาพปกติ</option>
+                            <option value="illegal">ภาพผิดกฎหมาย</option>
+                          </select>
+                        </div>
+
+                        {/* หมวดหมู่ */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            หมวดหมู่
+                          </label>
+                          <select
+                            value={categoryFilter}
+                            onChange={(e) =>
+                              setCategoryFilter(
+                                e.target.value as CategoryType | "all"
+                              )
+                            }
+                            className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="all">ทั้งหมด</option>
+                            <option value="weapon">อาวุธ</option>
+                            <option value="drug">ยาเสพติด</option>
+                            <option value="pornography">ภาพลามก/เปลือย</option>
+                            <option value="vape">บุหรี่ไฟฟ้า</option>
+                            <option value="other">อื่นๆ</option>
+                          </select>
+                        </div>
+
+                        {/* ระดับความน่าสงสัย */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-300 mb-1">
+                            ระดับความน่าสงสัย
+                          </label>
+                          <select
+                            value={suspicionFilter}
+                            onChange={(e) =>
+                              setSuspicionFilter(
+                                e.target.value as SuspicionLevel | "all"
+                              )
+                            }
+                            className="w-full px-3 py-2 bg-slate-600 border border-slate-500 rounded-md text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="all">ทั้งหมด</option>
+                            <option value="high-risk">
+                              ต้องสงสัย (&gt;90%)
+                            </option>
+                            <option value="suspicious">
+                              น่าสงสัย (80-90%)
+                            </option>
+                            <option value="watch">เฝ้าระวัง (60-70%)</option>
+                            <option value="irrelevant">
+                              ไม่เกี่ยวข้อง (&lt;60%)
+                            </option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* แสดงผลแยกตามหมวดหมู่ */}
                     <div className="space-y-4">
                       {(() => {
@@ -877,8 +884,7 @@ function IllegalImagePage() {
                             const categoryName = {
                               weapon: "อาวุธ",
                               drug: "ยาเสพติด",
-                              pornography: "ภาพลามก",
-                              nudity: "ภาพเปลือย",
+                              pornography: "ภาพลามก/เปลือย",
                               vape: "บุหรี่ไฟฟ้า",
                               other: "อื่นๆ",
                             }[category as CategoryType];
@@ -968,10 +974,6 @@ function IllegalImagePage() {
                                                     return (
                                                       <AlertTriangle className="w-5 h-5 text-pink-500" />
                                                     );
-                                                  case "nudity":
-                                                    return (
-                                                      <AlertTriangle className="w-5 h-5 text-orange-500" />
-                                                    );
                                                   case "vape":
                                                     return (
                                                       <AlertTriangle className="w-5 h-5 text-cyan-500" />
@@ -1002,8 +1004,6 @@ function IllegalImagePage() {
                                                           return "text-purple-400";
                                                         case "pornography":
                                                           return "text-pink-400";
-                                                        case "nudity":
-                                                          return "text-orange-400";
                                                         case "vape":
                                                           return "text-cyan-400";
                                                         default:
@@ -1016,6 +1016,7 @@ function IllegalImagePage() {
                                                 >
                                                   {item.classification}
                                                   {item.confidence &&
+                                                    isIllegal &&
                                                     ` (${(
                                                       item.confidence * 100
                                                     ).toFixed(1)}%)`}
@@ -1025,13 +1026,17 @@ function IllegalImagePage() {
                                           </div>
 
                                           <div className="flex items-center space-x-2">
-                                            <span
-                                              className={`px-2 py-1 rounded text-xs font-medium ${getSuspicionColor(
-                                                suspicionLevel
-                                              )}`}
-                                            >
-                                              {getSuspicionText(suspicionLevel)}
-                                            </span>
+                                            {isIllegal && (
+                                              <span
+                                                className={`px-2 py-1 rounded text-xs font-medium ${getSuspicionColor(
+                                                  suspicionLevel
+                                                )}`}
+                                              >
+                                                {getSuspicionText(
+                                                  suspicionLevel
+                                                )}
+                                              </span>
+                                            )}
                                             <span
                                               className={`px-2 py-1 rounded text-xs font-medium ${(() => {
                                                 if (isIllegal) {
@@ -1042,8 +1047,6 @@ function IllegalImagePage() {
                                                       return "bg-purple-700 text-purple-100";
                                                     case "pornography":
                                                       return "bg-pink-700 text-pink-100";
-                                                    case "nudity":
-                                                      return "bg-orange-700 text-orange-100";
                                                     case "vape":
                                                       return "bg-cyan-700 text-cyan-100";
                                                     default:
