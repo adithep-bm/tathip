@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import Header from "../components/Header";
 import SideBar from "../components/SideBar";
-import { Eye, Plus, Search, AlertTriangle, Globe, User, History, Trash2, X, AlertCircle } from "lucide-react";
+import { Eye, Plus, Search, AlertTriangle, Globe, User, History, Trash2, AlertCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface WatchlistItem {
   id: string;
@@ -14,6 +15,7 @@ interface WatchlistItem {
 }
 
 function WatchListPage() {
+  const navigate = useNavigate();
   const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>(() => {
     try {
       const stored = localStorage.getItem("watchlist");
@@ -30,8 +32,6 @@ function WatchListPage() {
   const [activeTab, setActiveTab] = useState<"accounts" | "websites">("accounts");
   const [showAddForm, setShowAddForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedItem, setSelectedItem] = useState<WatchlistItem | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -65,12 +65,10 @@ function WatchListPage() {
 
   const confirmDeleteAction = () => {
     if (confirmDelete) {
-      setDeletingId(confirmDelete);
-      setTimeout(() => {
-        setWatchlistItems((prev) => prev.filter((item) => item.id !== confirmDelete));
-        setDeletingId(null);
-        setConfirmDelete(null);
-      }, 300);
+      const updatedItems = watchlistItems.filter((item) => item.id !== confirmDelete);
+      setWatchlistItems(updatedItems);
+      localStorage.setItem("watchlist", JSON.stringify(updatedItems));
+      setConfirmDelete(null);
     }
   };
 
@@ -117,7 +115,6 @@ function WatchListPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <SideBar />
           <div className="lg:col-span-3 space-y-6">
-            {/* Header */}
             <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
@@ -137,19 +134,16 @@ function WatchListPage() {
               </div>
             </div>
 
-            {/* Add Form */}
             {showAddForm && (
-              <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-red-600 transform transition-all duration-300 animate-in slide-in-from-top-5">
+              <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-red-600">
                 <h3 className="text-lg font-semibold text-white mb-4">เพิ่มรายการเฝ้าระวังใหม่</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">ประเภท</label>
                     <select
                       value={formData.type}
-                      onChange={(e) =>
-                        setFormData({ ...formData, type: e.target.value as "account" | "website" })
-                      }
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value as "account" | "website" })}
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white"
                     >
                       <option value="account">บัญชีธนาคาร</option>
                       <option value="website">เว็บไซต์</option>
@@ -161,7 +155,7 @@ function WatchListPage() {
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white"
                       placeholder="ระบุชื่อหรือ URL"
                     />
                   </div>
@@ -170,7 +164,7 @@ function WatchListPage() {
                     <textarea
                       value={formData.details}
                       onChange={(e) => setFormData({ ...formData, details: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white transition-colors focus:border-red-500 focus:ring-1 focus:ring-red-500"
+                      className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-md text-white"
                       rows={3}
                       placeholder="ระบุรายละเอียดเพิ่มเติม"
                     />
@@ -179,13 +173,13 @@ function WatchListPage() {
                 <div className="flex justify-end space-x-3 mt-4">
                   <button
                     onClick={() => setShowAddForm(false)}
-                    className="px-4 py-2 text-gray-300 bg-slate-700 rounded-md hover:bg-slate-600 transition-all duration-300 transform hover:scale-105"
+                    className="px-4 py-2 text-gray-300 bg-slate-700 rounded-md hover:bg-slate-600"
                   >
                     ยกเลิก
                   </button>
                   <button
                     onClick={handleAddItem}
-                    className="px-4 py-2 bg-red-700 text-white rounded-md hover:bg-red-600 transition-all duration-300 transform hover:scale-105"
+                    className="px-4 py-2 bg-red-700 text-white rounded-md hover:bg-red-600"
                   >
                     เพิ่มรายการ
                   </button>
@@ -193,53 +187,41 @@ function WatchListPage() {
               </div>
             )}
 
-            {/* Tabs and Search */}
+            {/* ส่วนแสดงรายการ */}
             <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex space-x-1">
                   <button
                     onClick={() => setActiveTab("accounts")}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ${activeTab === "accounts"
-                      ? "bg-red-700 text-white shadow-lg"
-                      : "text-gray-400 hover:text-gray-200 hover:bg-slate-700"
-                      }`}
+                    className={`px-4 py-2 rounded-md text-sm font-medium ${activeTab === "accounts" ? "bg-red-700 text-white" : "text-gray-400 hover:text-gray-200 hover:bg-slate-700"}`}
                   >
                     บัญชีธนาคาร
                   </button>
                   <button
                     onClick={() => setActiveTab("websites")}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-300 ${activeTab === "websites"
-                      ? "bg-red-700 text-white shadow-lg"
-                      : "text-gray-400 hover:text-gray-200 hover:bg-slate-700"
-                      }`}
+                    className={`px-4 py-2 rounded-md text-sm font-medium ${activeTab === "websites" ? "bg-red-700 text-white" : "text-gray-400 hover:text-gray-200 hover:bg-slate-700"}`}
                   >
                     เว็บไซต์
                   </button>
                 </div>
-                <div className="relative group">
-                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors group-focus-within:text-red-400" />
+                <div className="relative">
+                  <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
                   <input
                     type="text"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="ค้นหารายการ..."
-                    className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-md text-sm text-white placeholder-gray-400 transition-all duration-300 focus:border-red-500 focus:ring-1 focus:ring-red-500 hover:bg-slate-600"
+                    className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-md text-sm text-white placeholder-gray-400"
                   />
                 </div>
               </div>
 
-              {/* Items List */}
               <div className="space-y-4">
-                {filteredItems.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className={`group border border-slate-600 rounded-lg p-4 bg-slate-700 transition-all duration-300 hover:bg-slate-600/50 hover:border-slate-500 hover:shadow-lg ${deletingId === item.id ? 'animate-out slide-out-to-right-full opacity-0' : 'animate-in slide-in-from-left-5'
-                      }`}
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
+                {filteredItems.map((item) => (
+                  <div key={item.id} className="group border border-slate-600 rounded-lg p-4 bg-slate-700 hover:bg-slate-600 transition-all">
                     <div className="flex items-start justify-between">
                       <div className="flex items-start space-x-3 flex-1">
-                        <div className="p-2 bg-slate-600 rounded-lg group-hover:bg-slate-500 transition-colors duration-300">
+                        <div className="p-2 bg-slate-600 rounded-lg">
                           {item.type === "account" ? (
                             <User className="w-5 h-5 text-gray-300" />
                           ) : (
@@ -248,17 +230,13 @@ function WatchListPage() {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-1">
-                            <h3 className="font-medium text-white group-hover:text-gray-100 transition-colors duration-300">{item.name}</h3>
-                            <div
-                              className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border transition-all duration-300 ${getStatusColor(
-                                item.status
-                              )}`}
-                            >
+                            <h3 className="font-medium text-white">{item.name}</h3>
+                            <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(item.status)}`}>
                               {item.status === "flagged" && <AlertTriangle className="w-3 h-3" />}
                               <span>{getStatusText(item.status)}</span>
                             </div>
                           </div>
-                          <p className="text-sm text-gray-300 mb-2 group-hover:text-gray-200 transition-colors duration-300">{item.details}</p>
+                          <p className="text-sm text-gray-300 mb-2">{item.details}</p>
                           <div className="flex items-center space-x-4 text-xs text-gray-400">
                             <span>เพิ่มเมื่อ: {item.addedDate}</span>
                             {item.lastActivity && <span>กิจกรรมล่าสุด: {item.lastActivity}</span>}
@@ -267,15 +245,15 @@ function WatchListPage() {
                       </div>
                       <div className="flex space-x-2">
                         <button
-                          onClick={() => setSelectedItem(item)}
-                          className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-blue-900/30 text-sm font-medium"
+                          onClick={() => navigate(`/watchlist/${item.id}`)}
+                          className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg hover:from-blue-700 hover:to-blue-800"
                         >
                           <History className="w-4 h-4" />
                           <span>ดูประวัติ</span>
                         </button>
                         <button
                           onClick={() => handleDelete(item.id)}
-                          className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-red-900/30 text-sm font-medium"
+                          className="flex items-center space-x-2 px-3 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800"
                         >
                           <Trash2 className="w-4 h-4" />
                           <span>ลบ</span>
@@ -284,126 +262,39 @@ function WatchListPage() {
                     </div>
                   </div>
                 ))}
-                {filteredItems.length === 0 && (
-                  <div className="text-center text-gray-400 py-12">
-                    <div className="w-16 h-16 mx-auto mb-4 opacity-50">
-                      <Search className="w-full h-full" />
-                    </div>
-                    <p className="text-lg font-medium">ไม่พบรายการ</p>
-                    <p className="text-sm mt-1">ลองเปลี่ยนคำค้นหาหรือเพิ่มรายการใหม่</p>
-                  </div>
-                )}
               </div>
             </div>
+
+            {/* Modal ยืนยันการลบ */}
+            {confirmDelete && (
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-slate-800 p-6 rounded-lg shadow-xl w-full max-w-md border border-slate-600">
+                  <div className="flex items-center space-x-3 mb-4">
+                    <AlertCircle className="w-6 h-6 text-red-400" />
+                    <h3 className="text-white text-lg font-semibold">ยืนยันการลบ</h3>
+                  </div>
+                  <p className="text-gray-300 mb-6">คุณแน่ใจว่าต้องการลบรายการนี้หรือไม่?</p>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      onClick={cancelDelete}
+                      className="px-4 py-2 bg-slate-600 text-white rounded-md hover:bg-slate-700"
+                    >
+                      ยกเลิก
+                    </button>
+                    <button
+                      onClick={confirmDeleteAction}
+                      className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                    >
+                      ยืนยันลบ
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         </div>
       </div>
-
-      {/* Modal */}
-      {selectedItem && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in-0 duration-300">
-          <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-6 w-full max-w-md shadow-2xl border border-slate-600 relative transform transition-all duration-300 animate-in zoom-in-95 slide-in-from-bottom-5">
-            <button
-              onClick={() => setSelectedItem(null)}
-              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-white hover:bg-slate-600/50 rounded-lg transition-all duration-300 transform hover:scale-110"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="p-3 bg-blue-500/20 rounded-lg border border-blue-500/30">
-                <History className="w-6 h-6 text-blue-400" />
-              </div>
-              <h3 className="text-xl font-bold text-white">ประวัติรายการ</h3>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 gap-3">
-                <div className="p-3 bg-slate-700/50 rounded-lg border border-slate-600/30">
-                  <span className="text-sm font-semibold text-slate-300 block mb-1">ประเภท</span>
-                  <span className="text-white font-medium">
-                    {selectedItem.type === 'account' ? 'บัญชีธนาคาร' : 'เว็บไซต์'}
-                  </span>
-                </div>
-
-                <div className="p-3 bg-slate-700/50 rounded-lg border border-slate-600/30">
-                  <span className="text-sm font-semibold text-slate-300 block mb-1">ชื่อ/URL</span>
-                  <span className="text-white font-medium break-all">{selectedItem.name}</span>
-                </div>
-
-                <div className="p-3 bg-slate-700/50 rounded-lg border border-slate-600/30">
-                  <span className="text-sm font-semibold text-slate-300 block mb-1">รายละเอียด</span>
-                  <span className="text-white">{selectedItem.details}</span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 bg-slate-700/50 rounded-lg border border-slate-600/30">
-                    <span className="text-sm font-semibold text-slate-300 block mb-1">เพิ่มเมื่อ</span>
-                    <span className="text-white font-medium">{selectedItem.addedDate}</span>
-                  </div>
-
-                  <div className="p-3 bg-slate-700/50 rounded-lg border border-slate-600/30">
-                    <span className="text-sm font-semibold text-slate-300 block mb-1">สถานะ</span>
-                    <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(selectedItem.status)}`}>
-                      {selectedItem.status === "flagged" && <AlertTriangle className="w-3 h-3" />}
-                      <span>{getStatusText(selectedItem.status)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {selectedItem.lastActivity && (
-                  <div className="p-3 bg-blue-900/20 rounded-lg border border-blue-700/30">
-                    <span className="text-sm font-semibold text-blue-300 block mb-1">กิจกรรมล่าสุด</span>
-                    <span className="text-blue-200 font-medium">{selectedItem.lastActivity}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => setSelectedItem(null)}
-                className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-all duration-300 transform hover:scale-105 font-medium"
-              >
-                ปิด
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {confirmDelete && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in-0 duration-300">
-          <div className="bg-slate-800/90 backdrop-blur-sm rounded-lg p-6 w-full max-w-md shadow-2xl border border-slate-600 relative transform transition-all duration-300 animate-in zoom-in-95 slide-in-from-bottom-5">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="p-3 bg-red-500/20 rounded-lg border border-red-500/30">
-                <AlertCircle className="w-6 h-6 text-red-400" />
-              </div>
-              <h3 className="text-xl font-bold text-white">ยืนยันการลบ</h3>
-            </div>
-
-            <p className="text-gray-300 mb-6">
-              คุณต้องการลบรายการนี้ใช่หรือไม่? การดำเนินการนี้ไม่สามารถยกเลิกได้
-            </p>
-
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={cancelDelete}
-                className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-all duration-300 transform hover:scale-105 font-medium"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={confirmDeleteAction}
-                className="px-4 py-2 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-red-900/30 font-medium"
-              >
-                ลบรายการ
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
