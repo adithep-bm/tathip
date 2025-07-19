@@ -9,7 +9,7 @@ import json
 import time
 
 # ⚙️ การตั้งค่า
-BASE_URL = "http://localhost:8000/v1/crawler"
+BASE_URL = "http://10.119.65.140:8000/v1/crawler"
 TEST_QUERIES = [
     "บาคาร่า",  # คำที่น่าจะเจอเว็บพนัน
     "แทงหวย",  # คำที่น่าจะเจอเว็บพนัน
@@ -94,7 +94,7 @@ def test_screenshot_simple():
 def check_server():
     """ตรวจสอบว่า server รันอยู่หรือไม่"""
     try:
-        response = requests.get("http://localhost:8000/", timeout=5)
+        response = requests.get("http://10.119.65.140:8000/", timeout=5)
         if response.status_code == 200:
             print("✅ Server รันอยู่!")
             return True

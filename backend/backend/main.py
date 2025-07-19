@@ -37,12 +37,12 @@ def on_startup():
     slip_classifier_path = os.getenv("YOLO_SLIP_CLASSIFIER_PATH")
     if slip_classifier_path:
         models["slip_classifier"] = YoloPredictionService(model_path=slip_classifier_path)
-    
+
 
 # --- Middleware ---
 origins = [
-    "http://localhost",
-    "http://localhost:5173",
+    "http://10.119.65.140",
+    "http://10.119.65.140:5173",
 ]
 
 app.add_middleware(

@@ -21,25 +21,11 @@ if not api_key or not cse_id:
         "⚠️ Google API keys not configured. Search functionality may not work."
     )
 
-# คำต้องสงสัยสำหรับตรวจจับเว็บพนัน
-suspicious_terms = [
-    "พนัน",
-    "บาคาร่า",
-    "casino",
-    "หวย",
-    "โป๊กเกอร์",
-    "slot",
-    "แทงบอล",
-    "gambling",
-    "bet",
-]
-
 
 class SearchResult(BaseModel):
     title: str
     link: str
     snippet: str
-    is_suspicious: bool = False
 
 
 def google_search(query, api_key, cse_id, num=10):
@@ -65,7 +51,7 @@ async def process_search_results(
     search_data: Dict[str, Any], query: str
 ) -> List[SearchResult]:
     """
-    ประมวลผลผลลัพธ์การค้นหา และตรวจสอบเว็บต้องสงสัย
+    ประมวลผลผลลัพธ์การค้นหา
     """
     results = []
     items = search_data.get("items", [])
@@ -75,18 +61,10 @@ async def process_search_results(
         link = item.get("link", "")
         snippet = item.get("snippet", "")
 
-        # ตรวจสอบว่าเป็นเว็บต้องสงสัยหรือไม่
-        combined_text = f"{title} {snippet} {link}".lower()
-        is_suspicious = any(term in combined_text for term in suspicious_terms)
-
-        if is_suspicious:
-            logger.warning(f"⚠️ Suspicious site detected: {link}")
-
         result = SearchResult(
             title=title,
             link=link,
             snippet=snippet,
-            is_suspicious=is_suspicious,
         )
         results.append(result)
 
@@ -120,13 +98,10 @@ async def search_endpoint(
                 status_code=500, detail="เกิดข้อผิดพลาดในการเชื่อมต่อกับ Google Search API"
             )
 
-        # ประมวลผลผลลัพธ์และตรวจสอบเว็บต้องสงสัย
+        # ประมวลผลผลลัพธ์
         results = await process_search_results(search_data, query)
 
-        suspicious_count = sum(1 for r in results if r.is_suspicious)
-        logger.info(
-            f"Search completed: {len(results)} results, {suspicious_count} suspicious sites"
-        )
+        logger.info(f"Search completed: {len(results)} results")
 
         return results
 
@@ -146,9 +121,8 @@ async def test_endpoint():
     return {
         "message": "Crawler API is working!",
         "google_api_configured": bool(api_key and cse_id),
-        "suspicious_terms": suspicious_terms,
         "endpoints": [
-            "/v1/crawler/search - ค้นหาและตรวจสอบเว็บต้องสงสัย",
+            "/v1/crawler/search - ค้นหาข้อมูลเว็บไซต์",
             "/v1/crawler/test - endpoint ทดสอบ",
             "/v1/crawler/debug - debug ระบบ",
         ],
@@ -169,7 +143,6 @@ async def debug_endpoint():
 
         return {
             "environment_variables": env_vars,
-            "suspicious_terms": suspicious_terms,
             "debug_info": {
                 "requests_available": "requests" in str(type(requests)),
                 "logger_available": "logger" in locals() or "logger" in globals(),

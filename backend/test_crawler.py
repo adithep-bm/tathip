@@ -8,7 +8,7 @@ import json
 from pprint import pprint
 
 # กำหนด URL ของ API
-BASE_URL = "http://localhost:8000/v1/crawler"
+BASE_URL = "http://10.119.65.140:8000/v1/crawler"
 
 
 def test_search_api():

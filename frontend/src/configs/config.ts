@@ -4,7 +4,7 @@ const isDev = !isProd;
 const conf = {
   isProd,
   isDev,
-  apiPrefix: isProd ? '/api' : 'http://localhost:8000/v1',
-}
+  apiPrefix: isProd ? "/api" : "http://10.119.65.140:8000/v1",
+};
 
 export default conf;
