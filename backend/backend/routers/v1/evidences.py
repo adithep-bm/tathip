@@ -29,6 +29,7 @@ class Evidence(BaseModel):
     evidence_type: str
     evidence_id: int
     excel_url: str | None = None  # เพิ่ม field นี้
+    confidence: float | None = None  # เพิ่ม field สำหรับ confidence ของโมเดล
 
 
 # --- Pydantic Models ---
@@ -41,6 +42,10 @@ class ClassificationResult(BaseModel):
 class UploadSlipsResponse(BaseModel):
     message: str
     firebase_url: str
+    case_id: str
+    evidence_id : int
+    evidence_type : str | None = "slip"
+    confidence: float | None = None  # เพิ่ม field สำหรับ confidence ของโมเดล
 
 
 evidence_db: list[Evidence] = []
@@ -68,9 +73,7 @@ def read_evidences_by_case(case_id: str) -> List[Evidence]:
 @router.post(
     "/upload/{case_id}",
     summary="Upload ZIP, classify, and return the Firebase URL of slips-only ZIP",
-    response_model=UploadSlipsResponse, # <-- ระบุ Model สำหรับ Response
     response_model=UploadSlipsResponse,  # <-- ระบุ Model สำหรับ Response
-    tags=["Classification"],
 )
 async def upload_and_get_url(
     case_id: str,
@@ -119,11 +122,10 @@ async def upload_and_get_url(
                     image_bytes = thezip.read(filename)
 
                     # 4. จำแนกประเภท
-                    classification = slip_classifier.predict_classify(image_bytes)
+                    classification, confidence = slip_classifier.predict_classify(image_bytes)
                     logger.info(f"Classified '{filename}' as '{classification}'")
 
-                    # 5. หากเป็น 'Slip' ให้เก็บข้อมูลไว้
-                    if classification == "Slip":
+                    if classification == 'Slip':
                         filename_in_zip = os.path.join("Slip", os.path.basename(filename))
                         slip_images_data.append({'filename': filename_in_zip, 'data': image_bytes})
                         slip_images_data.append(
@@ -162,7 +164,8 @@ async def upload_and_get_url(
         evidence_url=firebase_url,
         created_at=datetime.utcnow(),
         evidence_type="slip",
-        evidence_id=evidence_id
+        evidence_id=evidence_id,
+        confidence=confidence
     )
     evidence_db.append(evidence)
     case.evidenceCount += 1
@@ -170,10 +173,11 @@ async def upload_and_get_url(
     # 9. ส่งคืน URL ของ Firebase ในรูปแบบ JSON
     return UploadSlipsResponse(
         message="Slips have been processed and uploaded successfully.",
-        firebase_url=firebase_url,,
+        firebase_url=firebase_url,
         case_id=case_id,
         evidence_id=evidence_id,
-        evidence_type="slip"
+        evidence_type="slip",
+        confidence=confidence
     )
 
 
