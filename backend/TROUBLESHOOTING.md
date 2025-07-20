@@ -7,7 +7,7 @@
 ใช้ endpoint debug เพื่อตรวจสอบระบบ:
 
 ```bash
-curl http://10.119.65.140:8000/v1/crawler/debug
+curl http://10.114.139.140:8000/v1/crawler/debug
 ```
 
 ### 2. 🧪 ทดสอบ Screenshot แบบง่าย
@@ -15,8 +15,8 @@ curl http://10.119.65.140:8000/v1/crawler/debug
 ทดสอบ screenshot โดยไม่ต้องใช้ Firebase:
 
 ```bash
-curl -X POST "http://10.119.65.140:8000/v1/crawler/screenshot-test"
-curl -X POST "http://10.119.65.140:8000/v1/crawler/screenshot-test?url=https://www.google.com"
+curl -X POST "http://10.114.139.140:8000/v1/crawler/screenshot-test"
+curl -X POST "http://10.114.139.140:8000/v1/crawler/screenshot-test?url=https://www.google.com"
 ```
 
 **ผลลัพธ์ที่คาดหวัง:**
@@ -66,7 +66,7 @@ FIREBASE_STORAGE_BUCKET=your-project.appspot.com
 
 ```bash
 # ทดสอบกับเว็บไซต์ง่ายๆ ก่อน
-curl -X POST "http://10.119.65.140:8000/v1/crawler/screenshot-test?url=https://www.google.com"
+curl -X POST "http://10.114.139.140:8000/v1/crawler/screenshot-test?url=https://www.google.com"
 ```
 
 ### 3. 🚫 Playwright ไม่ทำงาน
@@ -110,14 +110,14 @@ curl -I https://firebasestorage.googleapis.com
 ### Step 1: ทดสอบพื้นฐาน
 
 ```bash
-curl http://10.119.65.140:8000/v1/crawler/test
-curl http://10.119.65.140:8000/v1/crawler/debug
+curl http://10.114.139.140:8000/v1/crawler/test
+curl http://10.114.139.140:8000/v1/crawler/debug
 ```
 
 ### Step 2: ทดสอบ Screenshot ไม่ใช้ Firebase
 
 ```bash
-curl -X POST "http://10.119.65.140:8000/v1/crawler/screenshot-test"
+curl -X POST "http://10.114.139.140:8000/v1/crawler/screenshot-test"
 ```
 
 ### Step 3: ดู Logs

@@ -59,19 +59,19 @@ page = await context.new_page()
 ### 1. ทดสอบ Placeholder Screenshot
 
 ```bash
-curl -X POST "http://10.119.65.140:8000/v1/crawler/screenshot-simple"
+curl -X POST "http://10.114.139.140:8000/v1/crawler/screenshot-simple"
 ```
 
 ### 2. ทดสอบ Playwright Screenshot
 
 ```bash
-curl -X POST "http://10.119.65.140:8000/v1/crawler/screenshot?url=https://www.google.com&title=Google"
+curl -X POST "http://10.114.139.140:8000/v1/crawler/screenshot?url=https://www.google.com&title=Google"
 ```
 
 ### 3. ทดสอบผ่าน Search
 
 ```bash
-curl -X GET "http://10.119.65.140:8000/v1/crawler/search?query=พนัน"
+curl -X GET "http://10.114.139.140:8000/v1/crawler/search?query=พนัน"
 ```
 
 ## แนวทางทางเลือก (หากปัญหายังคงอยู่)

@@ -54,8 +54,8 @@ def on_startup():
 
 # --- Middleware ---
 origins = [
-    "http://10.119.65.140",
-    "http://10.119.65.140:5173",
+    "http://10.114.139.140",
+    "http://10.114.139.140:5173",
 ]
 
 app.add_middleware(

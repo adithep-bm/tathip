@@ -132,7 +132,7 @@ function WebCrawlerPage() {
     } catch (error) {
       console.error("❌ API Connection failed:", error);
       alert(
-        "ไม่สามารถเชื่อมต่อ API ได้ โปรดตรวจสอบว่า backend ทำงานที่ http://10.119.65.140:8000"
+        "ไม่สามารถเชื่อมต่อ API ได้ โปรดตรวจสอบว่า backend ทำงานที่ http://10.114.139.140:8000"
       );
     }
   };
@@ -603,11 +603,7 @@ function WebCrawlerPage() {
                           0
                         )}
                       </span>
-                      {searchSessions.length > 0 && (
-                        <span className="text-blue-400">
-                          💾 บันทึกใน Browser
-                        </span>
-                      )}
+                      
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -637,9 +633,7 @@ function WebCrawlerPage() {
                       <p className="text-gray-500 text-sm">
                         เริ่มค้นหาเพื่อดูผลลัพธ์
                       </p>
-                      <p className="text-gray-600 text-xs mt-2">
-                        💾 ข้อมูลจะถูกบันทึกอัตโนมัติใน Browser
-                      </p>
+                      
                     </div>
                   ) : (
                     searchSessions.map((session) => (

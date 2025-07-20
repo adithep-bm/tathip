@@ -10,6 +10,8 @@ import {
   Folder,
   FolderOpen,
   Eye,
+  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import axios from "../utils/axiosInstance";
 import Header from "../components/Header";
@@ -71,6 +73,33 @@ function IllegalImagePage() {
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
     new Set()
   );
+
+  // สำหรับการเปิดปิดหมวดหมู่ผลลัพธ์
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    new Set(["weapon", "drug", "pornography", "vape", "other"]) // เปิดทุกหมวดหมู่ตอนเริ่มต้น
+  );
+
+  // ฟังก์ชันสำหรับเปิด/ปิดหมวดหมู่
+  const toggleCategory = (category: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(category)) {
+      newExpanded.delete(category);
+    } else {
+      newExpanded.add(category);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  // ฟังก์ชันสำหรับเปิด/ปิดทุกหมวดหมู่
+  const toggleAllCategories = () => {
+    if (expandedCategories.size > 0) {
+      setExpandedCategories(new Set()); // ปิดทั้งหมด
+    } else {
+      setExpandedCategories(
+        new Set(["weapon", "drug", "pornography", "vape", "other"])
+      ); // เปิดทั้งหมด
+    }
+  };
 
   // โหลดข้อมูลจาก localStorage เมื่อเริ่มต้น
   useEffect(() => {
@@ -698,12 +727,6 @@ function IllegalImagePage() {
                       <h2 className="text-lg font-semibold text-white">
                         ผลการประมวลผล
                       </h2>
-                      <button
-                        onClick={resetUpload}
-                        className="px-3 py-1 bg-gray-700 text-gray-300 rounded text-sm hover:bg-gray-600"
-                      >
-                        อัปโหลดใหม่
-                      </button>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -791,10 +814,30 @@ function IllegalImagePage() {
 
                     {/* Filter Options */}
                     <div className="bg-slate-700/50 rounded-lg p-4 mb-4">
-                      <h4 className="text-md font-medium text-white mb-3 flex items-center">
-                        <Filter className="w-4 h-4 mr-2" />
-                        ตัวกรองผลลัพธ์
-                      </h4>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-md font-medium text-white flex items-center">
+                          <Filter className="w-4 h-4 mr-2" />
+                          ตัวกรองผลลัพธ์
+                        </h4>
+
+                        {/* ปุ่มเปิด/ปิดทุกหมวดหมู่ */}
+                        <button
+                          onClick={toggleAllCategories}
+                          className="flex items-center space-x-2 px-3 py-1 bg-slate-600 hover:bg-slate-500 text-white text-sm rounded-md transition-colors"
+                        >
+                          {expandedCategories.size > 0 ? (
+                            <>
+                              <FolderOpen className="w-4 h-4" />
+                              <span>ปิดทุกหมวดหมู่</span>
+                            </>
+                          ) : (
+                            <>
+                              <Folder className="w-4 h-4" />
+                              <span>เปิดทุกหมวดหมู่</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {/* สถานะ */}
@@ -919,154 +962,198 @@ function IllegalImagePage() {
 
                             if (filteredItems.length === 0) return null;
 
+                            // คำนวณสถิติของหมวดหมู่
+                            const legalCount = filteredItems.filter(
+                              (item: ClassificationResult) =>
+                                item.classification.toLowerCase() === "other"
+                            ).length;
+                            const illegalCount =
+                              filteredItems.length - legalCount;
+
                             return (
                               <div
                                 key={category}
                                 className="border border-slate-600 rounded-lg"
                               >
-                                <div className="bg-slate-700/50 p-3 rounded-t-lg">
+                                <div
+                                  className="bg-slate-700/50 p-3 rounded-t-lg cursor-pointer hover:bg-slate-700 transition-colors"
+                                  onClick={() => toggleCategory(category)}
+                                >
                                   <h4 className="text-white font-medium flex items-center justify-between">
-                                    <span>{categoryName}</span>
-                                    <span className="text-gray-400 text-sm">
-                                      ({filteredItems.length} ไฟล์)
-                                    </span>
+                                    <div className="flex items-center space-x-2">
+                                      {expandedCategories.has(category) ? (
+                                        <ChevronDown className="w-4 h-4 text-blue-400" />
+                                      ) : (
+                                        <ChevronRight className="w-4 h-4 text-gray-400" />
+                                      )}
+                                      <span>{categoryName}</span>
+                                    </div>
+                                    <div className="flex items-center space-x-3">
+                                      {/* สถิติสั้น */}
+                                      <div className="flex items-center space-x-2 text-sm">
+                                        {legalCount > 0 && (
+                                          <span className="text-green-400">
+                                            {legalCount} ปกติ
+                                          </span>
+                                        )}
+                                        {illegalCount > 0 && (
+                                          <span className="text-red-400">
+                                            {illegalCount} ผิดกฎหมาย
+                                          </span>
+                                        )}
+                                      </div>
+                                      <span className="text-gray-400 text-sm">
+                                        ({filteredItems.length} ไฟล์)
+                                      </span>
+                                      {expandedCategories.has(category) ? (
+                                        <Eye className="w-4 h-4 text-blue-400" />
+                                      ) : (
+                                        <Eye className="w-4 h-4 text-gray-500" />
+                                      )}
+                                    </div>
                                   </h4>
                                 </div>
 
-                                <div className="p-3 space-y-2">
-                                  {filteredItems.map(
-                                    (
-                                      item: ClassificationResult,
-                                      idx: number
-                                    ) => {
-                                      const isIllegal =
-                                        item.classification.toLowerCase() !==
-                                        "other";
-                                      const suspicionLevel = getSuspicionLevel(
-                                        item.confidence
-                                      );
-                                      const itemCategory = categorizeImage(
-                                        item.classification
-                                      );
-
-                                      return (
-                                        <div
-                                          key={idx}
-                                          className={`flex items-center justify-between p-3 rounded-lg border ${getEvidenceBackgroundColor(
-                                            itemCategory,
+                                {/* แสดงผลเฉพาะเมื่อหมวดหมู่ถูกเปิด */}
+                                {expandedCategories.has(category) && (
+                                  <div className="overflow-hidden">
+                                    <div className="p-3 space-y-2 animate-in slide-in-from-top-1 duration-200">
+                                      {filteredItems.map(
+                                        (
+                                          item: ClassificationResult,
+                                          idx: number
+                                        ) => {
+                                          const isIllegal =
+                                            item.classification.toLowerCase() !==
+                                            "other";
+                                          const suspicionLevel =
+                                            getSuspicionLevel(item.confidence);
+                                          const itemCategory = categorizeImage(
                                             item.classification
-                                          )}`}
-                                        >
-                                          <div className="flex items-center space-x-3">
-                                            {/* ไอคอนตามประเภทหลักฐาน */}
-                                            {(() => {
-                                              if (isIllegal) {
-                                                switch (itemCategory) {
-                                                  case "weapon":
+                                          );
+
+                                          return (
+                                            <div
+                                              key={idx}
+                                              className={`flex items-center justify-between p-3 rounded-lg border ${getEvidenceBackgroundColor(
+                                                itemCategory,
+                                                item.classification
+                                              )}`}
+                                            >
+                                              <div className="flex items-center space-x-3">
+                                                {/* ไอคอนตามประเภทหลักฐาน */}
+                                                {(() => {
+                                                  if (isIllegal) {
+                                                    switch (itemCategory) {
+                                                      case "weapon":
+                                                        return (
+                                                          <AlertTriangle className="w-5 h-5 text-red-500" />
+                                                        );
+                                                      case "drug":
+                                                        return (
+                                                          <AlertTriangle className="w-5 h-5 text-purple-500" />
+                                                        );
+                                                      case "pornography":
+                                                        return (
+                                                          <AlertTriangle className="w-5 h-5 text-pink-500" />
+                                                        );
+                                                      case "vape":
+                                                        return (
+                                                          <AlertTriangle className="w-5 h-5 text-cyan-500" />
+                                                        );
+                                                      default:
+                                                        return (
+                                                          <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                                                        );
+                                                    }
+                                                  } else {
                                                     return (
-                                                      <AlertTriangle className="w-5 h-5 text-red-500" />
+                                                      <CheckCircle className="w-5 h-5 text-green-500" />
                                                     );
-                                                  case "drug":
-                                                    return (
-                                                      <AlertTriangle className="w-5 h-5 text-purple-500" />
-                                                    );
-                                                  case "pornography":
-                                                    return (
-                                                      <AlertTriangle className="w-5 h-5 text-pink-500" />
-                                                    );
-                                                  case "vape":
-                                                    return (
-                                                      <AlertTriangle className="w-5 h-5 text-cyan-500" />
-                                                    );
-                                                  default:
-                                                    return (
-                                                      <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                                                    );
-                                                }
-                                              } else {
-                                                return (
-                                                  <CheckCircle className="w-5 h-5 text-green-500" />
-                                                );
-                                              }
-                                            })()}
-                                            <div>
-                                              <p className="text-white font-medium">
-                                                {item.filename}
-                                              </p>
+                                                  }
+                                                })()}
+                                                <div>
+                                                  <p className="text-white font-medium">
+                                                    {item.filename}
+                                                  </p>
+                                                  <div className="flex items-center space-x-2">
+                                                    <span
+                                                      className={`text-sm ${(() => {
+                                                        if (isIllegal) {
+                                                          switch (
+                                                            itemCategory
+                                                          ) {
+                                                            case "weapon":
+                                                              return "text-red-400";
+                                                            case "drug":
+                                                              return "text-purple-400";
+                                                            case "pornography":
+                                                              return "text-pink-400";
+                                                            case "vape":
+                                                              return "text-cyan-400";
+                                                            default:
+                                                              return "text-yellow-400";
+                                                          }
+                                                        } else {
+                                                          return "text-green-400";
+                                                        }
+                                                      })()}`}
+                                                    >
+                                                      {item.classification}
+                                                      {item.confidence &&
+                                                        isIllegal &&
+                                                        ` (${(
+                                                          item.confidence * 100
+                                                        ).toFixed(1)}%)`}
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              </div>
+
                                               <div className="flex items-center space-x-2">
+                                                {isIllegal && (
+                                                  <span
+                                                    className={`px-2 py-1 rounded text-xs font-medium ${getSuspicionColor(
+                                                      suspicionLevel
+                                                    )}`}
+                                                  >
+                                                    {getSuspicionText(
+                                                      suspicionLevel
+                                                    )}
+                                                  </span>
+                                                )}
                                                 <span
-                                                  className={`text-sm ${(() => {
+                                                  className={`px-2 py-1 rounded text-xs font-medium ${(() => {
                                                     if (isIllegal) {
                                                       switch (itemCategory) {
                                                         case "weapon":
-                                                          return "text-red-400";
+                                                          return "bg-red-700 text-red-100";
                                                         case "drug":
-                                                          return "text-purple-400";
+                                                          return "bg-purple-700 text-purple-100";
                                                         case "pornography":
-                                                          return "text-pink-400";
+                                                          return "bg-pink-700 text-pink-100";
                                                         case "vape":
-                                                          return "text-cyan-400";
+                                                          return "bg-cyan-700 text-cyan-100";
                                                         default:
-                                                          return "text-yellow-400";
+                                                          return "bg-yellow-700 text-yellow-100";
                                                       }
                                                     } else {
-                                                      return "text-green-400";
+                                                      return "bg-green-700 text-green-100";
                                                     }
                                                   })()}`}
                                                 >
-                                                  {item.classification}
-                                                  {item.confidence &&
-                                                    isIllegal &&
-                                                    ` (${(
-                                                      item.confidence * 100
-                                                    ).toFixed(1)}%)`}
+                                                  {isIllegal
+                                                    ? categoryName
+                                                    : "ปกติ"}
                                                 </span>
                                               </div>
                                             </div>
-                                          </div>
-
-                                          <div className="flex items-center space-x-2">
-                                            {isIllegal && (
-                                              <span
-                                                className={`px-2 py-1 rounded text-xs font-medium ${getSuspicionColor(
-                                                  suspicionLevel
-                                                )}`}
-                                              >
-                                                {getSuspicionText(
-                                                  suspicionLevel
-                                                )}
-                                              </span>
-                                            )}
-                                            <span
-                                              className={`px-2 py-1 rounded text-xs font-medium ${(() => {
-                                                if (isIllegal) {
-                                                  switch (itemCategory) {
-                                                    case "weapon":
-                                                      return "bg-red-700 text-red-100";
-                                                    case "drug":
-                                                      return "bg-purple-700 text-purple-100";
-                                                    case "pornography":
-                                                      return "bg-pink-700 text-pink-100";
-                                                    case "vape":
-                                                      return "bg-cyan-700 text-cyan-100";
-                                                    default:
-                                                      return "bg-yellow-700 text-yellow-100";
-                                                  }
-                                                } else {
-                                                  return "bg-green-700 text-green-100";
-                                                }
-                                              })()}`}
-                                            >
-                                              {isIllegal
-                                                ? categoryName
-                                                : "ปกติ"}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      );
-                                    }
-                                  )}
-                                </div>
+                                          );
+                                        }
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
                             );
                           }
