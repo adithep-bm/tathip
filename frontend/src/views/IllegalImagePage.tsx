@@ -12,6 +12,7 @@ import {
   Eye,
   ChevronDown,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import axios from "../utils/axiosInstance";
 import Header from "../components/Header";
@@ -79,6 +80,11 @@ function IllegalImagePage() {
     new Set(["weapon", "drug", "pornography", "vape", "other"]) // เปิดทุกหมวดหมู่ตอนเริ่มต้น
   );
 
+  // สำหรับการดาวน์โหลด ZIP หมวดหมู่
+  const [downloadingCategories, setDownloadingCategories] = useState<
+    Set<string>
+  >(new Set());
+
   // ฟังก์ชันสำหรับเปิด/ปิดหมวดหมู่
   const toggleCategory = (category: string) => {
     const newExpanded = new Set(expandedCategories);
@@ -99,6 +105,144 @@ function IllegalImagePage() {
         new Set(["weapon", "drug", "pornography", "vape", "other"])
       ); // เปิดทั้งหมด
     }
+  };
+
+  // ฟังก์ชันลบประวัติการวิเคราะห์
+  const deleteSession = (sessionId: string) => {
+    // แสดงการยืนยันก่อนลบ
+    if (window.confirm("คุณต้องการลบประวัติการวิเคราะห์นี้หรือไม่?")) {
+      const updatedSessions = sessions.filter(
+        (session) => session.id !== sessionId
+      );
+      setSessions(updatedSessions);
+
+      // อัปเดต localStorage
+      localStorage.setItem(
+        "illegalImageSessions",
+        JSON.stringify(updatedSessions)
+      );
+
+      // ถ้าลบ session ที่กำลังแสดงผลอยู่ ให้เคลียร์ผลลัพธ์
+      if (result) {
+        const currentSession = sessions.find(
+          (session) => session.results === result
+        );
+        if (currentSession && currentSession.id === sessionId) {
+          setResult(null);
+        }
+      }
+
+      // เอา session ออกจาก expandedFolders ด้วย
+      const newExpanded = new Set(expandedFolders);
+      newExpanded.delete(sessionId);
+      setExpandedFolders(newExpanded);
+    }
+  };
+
+  // ฟังก์ชันลบประวัติการวิเคราะห์ทั้งหมด
+  const deleteAllSessions = () => {
+    if (
+      window.confirm(
+        "คุณต้องการลบประวัติการวิเคราะห์ทั้งหมดหรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้"
+      )
+    ) {
+      setSessions([]);
+      localStorage.removeItem("illegalImageSessions");
+      setResult(null);
+      setExpandedFolders(new Set());
+    }
+  };
+
+  // ฟังก์ชันดาวน์โหลด ZIP ของหมวดหมู่
+  const downloadCategoryZip = async (
+    category: CategoryType,
+    filenames: string[]
+  ) => {
+    try {
+      setDownloadingCategories((prev) => new Set(prev).add(category));
+
+      const response = await axios.post(
+        `/api/v1/evidences/download-category-zip/${category}`,
+        filenames,
+        {
+          responseType: "blob",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      // สร้าง URL และดาวน์โหลดไฟล์
+      const blob = response.data;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+
+      const categoryNames = {
+        weapon: "อาวุธ",
+        drug: "ยาเสพติด",
+        pornography: "ภาพลามก",
+        vape: "บุหรี่ไฟฟ้า",
+        other: "อื่นๆ",
+      };
+
+      link.href = url;
+      link.download = `${categoryNames[category]}_${filenames.length}files.zip`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setDownloadingCategories((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(category);
+        return newSet;
+      });
+    } catch (error) {
+      console.error("Error downloading category ZIP:", error);
+      alert(`เกิดข้อผิดพลาดในการดาวน์โหลด ZIP ของหมวดหมู่ ${category}`);
+
+      setDownloadingCategories((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(category);
+        return newSet;
+      });
+    }
+  };
+
+  // Component สำหรับปุ่มดาวน์โหลด ZIP ของหมวดหมู่
+  const CategoryDownloadButton = ({
+    category,
+    filenames,
+  }: {
+    category: CategoryType;
+    filenames: string[];
+  }) => {
+    const isDownloading = downloadingCategories.has(category);
+
+    return (
+      <button
+        onClick={() => downloadCategoryZip(category, filenames)}
+        disabled={isDownloading || filenames.length === 0}
+        className={`px-2 py-1 rounded flex items-center gap-1 text-xs transition-colors ${
+          isDownloading || filenames.length === 0
+            ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+            : "bg-blue-600 hover:bg-blue-700 text-white"
+        }`}
+        title={`ดาวน์โหลด ZIP ${filenames.length} ไฟล์`}
+      >
+        {isDownloading ? (
+          <>
+            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+            กำลังเตรียม...
+          </>
+        ) : (
+          <>
+            <Download className="w-3 h-3" />
+            ZIP ({filenames.length})
+          </>
+        )}
+      </button>
+    );
   };
 
   // โหลดข้อมูลจาก localStorage เมื่อเริ่มต้น
@@ -467,10 +611,20 @@ function IllegalImagePage() {
               {/* Folder System - ประวัติการวิเคราะห์ */}
               {sessions.length > 0 && (
                 <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
-                  <h2 className="text-lg font-semibold text-white mb-4 flex items-center">
-                    <FolderOpen className="w-5 h-5 mr-2" />
-                    ประวัติการวิเคราะห์
-                  </h2>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-white flex items-center">
+                      <FolderOpen className="w-5 h-5 mr-2" />
+                      ประวัติการวิเคราะห์
+                    </h2>
+                    <button
+                      onClick={deleteAllSessions}
+                      className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded flex items-center gap-1 transition-colors"
+                      title="ลบประวัติทั้งหมด"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      ลบทั้งหมด
+                    </button>
+                  </div>
 
                   <div className="space-y-3 max-h-60 overflow-y-auto">
                     {sessions.map((session) => {
@@ -526,8 +680,19 @@ function IllegalImagePage() {
                                   setResult(session.results);
                                 }}
                                 className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded"
+                                title="ดูผลลัพธ์"
                               >
                                 <Eye className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deleteSession(session.id);
+                                }}
+                                className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded"
+                                title="ลบประวัติการวิเคราะห์นี้"
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </button>
                             </div>
                           </div>
@@ -1005,6 +1170,18 @@ function IllegalImagePage() {
                                       <span className="text-gray-400 text-sm">
                                         ({filteredItems.length} ไฟล์)
                                       </span>
+
+                                      {/* ปุ่มดาวน์โหลด ZIP ของหมวดหมู่ */}
+                                      <div onClick={(e) => e.stopPropagation()}>
+                                        <CategoryDownloadButton
+                                          category={category as CategoryType}
+                                          filenames={filteredItems.map(
+                                            (item: ClassificationResult) =>
+                                              item.filename
+                                          )}
+                                        />
+                                      </div>
+
                                       {expandedCategories.has(category) ? (
                                         <Eye className="w-4 h-4 text-blue-400" />
                                       ) : (
