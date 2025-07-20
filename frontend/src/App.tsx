@@ -1,6 +1,8 @@
 import { Routes, Route } from "react-router";
 import { BrowserRouter as Router } from "react-router-dom";
+import { useEffect } from "react";
 import ProtectedRoute from "./contexts/ProtectedRoute";
+import PublicRoute from "./contexts/PublicRoute";
 import Login from "./views/LoginPage";
 import CaseManagement from "./views/CaseManagementPage";
 import UserManagementPage from "./views/UserManagementPage";
@@ -18,10 +20,22 @@ import WebCrawlerDetailPage from "./views/WebCrawlerDetailPage";
 import WatchlistDetailPage from "./views/WatchlistDetailPage";
 
 function App() {
+  useEffect(() => {
+    console.log(
+      "App component mounted, current path:",
+      window.location.pathname
+    );
+  }, []);
+
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Login />} />
+        {/* Public routes - ป้องกันไม่ให้เข้าเมื่อล็อกอินแล้ว */}
+        <Route element={<PublicRoute />}>
+          <Route path="/" element={<Login />} />
+        </Route>
+
+        {/* Protected routes - ต้องล็อกอินก่อน */}
         <Route element={<ProtectedRoute />}>
           <Route path="/case" element={<CaseManagement />} />
           <Route path="/usermanagement" element={<UserManagementPage />} />
@@ -38,9 +52,12 @@ function App() {
           <Route path="/evidence/:id" element={<EvidenceDetailPage />} />
           <Route path="/watchlist/:id" element={<WatchlistDetailPage />} />
         </Route>
+
+        {/* Catch-all route - redirect ไปหน้า login */}
+        <Route path="*" element={<Login />} />
       </Routes>
-    </Router >
-  )
+    </Router>
+  );
 }
 
-export default App
+export default App;
