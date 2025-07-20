@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import CreateCaseForm from '../components/CreateCaseForm';
 import { EditCaseModal } from '../components/CaseManagement/EditCaseModal';
 import type { Case, CasePriority } from '../types/case';
+import { useNavigate } from 'react-router-dom';
 
 function CaseManagementPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -26,6 +27,8 @@ function CaseManagementPage() {
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
+
+  const navigate = useNavigate(); // 
 
   const fetchCases = async () => {
     try {
@@ -356,7 +359,10 @@ function CaseManagementPage() {
                                     </div>
                                   </div>
                                   <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 ml-4">
-                                    <button className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors">
+                                    <button
+                                      onClick={() => navigate(`/case/${caseItem.case_id}`)}
+                                      className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors"
+                                    >
                                       ดูรายละเอียด
                                     </button>
                                     <button

@@ -15,6 +15,7 @@ import AlertSystemPage from "./views/AlertSystemPage";
 import CaseDetailPage from "./views/CaseDetailPage";
 import EvidenceDetailPage from "./views/EvidenceDetailPage";
 import WebCrawlerDetailPage from "./views/WebCrawlerDetailPage";
+import WatchlistDetailPage from "./views/WatchlistDetailPage";
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Route path="/alerts" element={<AlertSystemPage />} />
           <Route path="/case/:case_id" element={<CaseDetailPage />} />
           <Route path="/evidence/:id" element={<EvidenceDetailPage />} />
+          <Route path="/watchlist/:id" element={<WatchlistDetailPage />} />
         </Route>
       </Routes>
     </Router >
