@@ -1,6 +1,10 @@
 import { createContext, useContext, useState, useEffect } from "react"; // 1. Import useEffect
 import type { ReactNode } from "react";
-import axios, { getStoredToken, clearToken, setToken } from "../utils/axiosInstance";
+import axios, {
+  getStoredToken,
+  clearToken,
+  setToken,
+} from "../utils/axiosInstance";
 import { initializeTokenOnStartup } from "../utils/tokenManager";
 
 // --- Interfaces remain the same ---

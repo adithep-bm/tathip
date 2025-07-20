@@ -1,10 +1,10 @@
 import axios from "axios";
 import conf from "../configs/config";
-import { 
-  getAccessTokenCookie, 
-  setAccessTokenCookie, 
+import {
+  getAccessTokenCookie,
+  setAccessTokenCookie,
   clearAccessTokenCookie,
-  isTokenValid 
+  isTokenValid,
 } from "./cookieManager";
 
 const axiosInstance = axios.create({
@@ -54,7 +54,7 @@ const validateToken = async (): Promise<boolean> => {
 
   try {
     // ทดสอบ token ด้วยการเรียก API ที่ต้องการ authentication
-    await axiosInstance.get('/auth/validate');
+    await axiosInstance.get("/auth/validate");
     return true;
   } catch {
     console.log("Token validation failed");

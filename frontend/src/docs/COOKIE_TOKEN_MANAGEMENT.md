@@ -5,7 +5,7 @@
 ### ไฟล์ที่สร้างและแก้ไข:
 
 1. **`cookieManager.ts`** - ฟังก์ชันสำหรับจัดการ cookies
-2. **`axiosInstance.ts`** - อัปเดตเพื่อใช้ cookie functions  
+2. **`axiosInstance.ts`** - อัปเดตเพื่อใช้ cookie functions
 3. **`tokenManager.ts`** - อัปเดตเพื่อรองรับ cookies
 4. **`AuthContext.tsx`** - ใช้งานฟังก์ชันใหม่
 
@@ -15,37 +15,41 @@
 ✅ **Auto-expire**: กำหนดวันหมดอายุได้อัตโนมัติ  
 ✅ **Cross-tab sync**: Token ใช้งานได้ในทุก tab อัตโนมัติ  
 ✅ **Persistent storage**: ไม่หายเมื่อ refresh หน้าจอ  
-✅ **Better security**: ป้องกัน XSS attacks ได้ดีกว่า localStorage  
+✅ **Better security**: ป้องกัน XSS attacks ได้ดีกว่า localStorage
 
 ### วิธีใช้งาน:
 
 #### 1. การเก็บ Token (เมื่อ Login)
+
 ```typescript
-import { setToken } from '../utils/axiosInstance';
+import { setToken } from "../utils/axiosInstance";
 
 // เก็บ token ใน cookie และ localStorage
 setToken(accessToken);
 ```
 
 #### 2. การดึง Token (เมื่อต้องการใช้)
+
 ```typescript
-import { getStoredToken } from '../utils/axiosInstance';
+import { getStoredToken } from "../utils/axiosInstance";
 
 // ดึง token จาก cookie หรือ localStorage
 const token = getStoredToken();
 ```
 
 #### 3. การล้าง Token (เมื่อ Logout)
+
 ```typescript
-import { clearToken } from '../utils/axiosInstance';
+import { clearToken } from "../utils/axiosInstance";
 
 // ล้าง token จากทุก storage
 clearToken();
 ```
 
 #### 4. การตรวจสอบ Token
+
 ```typescript
-import { isTokenValid } from '../utils/cookieManager';
+import { isTokenValid } from "../utils/cookieManager";
 
 // ตรวจสอบว่า token ยังใช้งานได้หรือไม่
 if (isTokenValid()) {
@@ -71,6 +75,7 @@ if (isTokenValid()) {
 ### Backward Compatibility:
 
 ระบบยังคงรองรับ localStorage เพื่อความเข้ากันได้:
+
 - ถ้ามี token ใน localStorage จะย้ายไปไว้ใน cookie
 - ถ้าไม่มีใน cookie จะลองหาใน localStorage
 - การล้างจะล้างทั้ง cookie และ localStorage
@@ -79,17 +84,17 @@ if (isTokenValid()) {
 
 ```typescript
 // ใน AuthContext หรือ components อื่นๆ
-import { getStoredToken, setToken, clearToken } from '../utils/axiosInstance';
+import { getStoredToken, setToken, clearToken } from "../utils/axiosInstance";
 
 // Login
 const handleLogin = async (credentials) => {
-  const response = await axios.post('/auth/login', credentials);
+  const response = await axios.post("/auth/login", credentials);
   if (response.data.accessToken) {
     setToken(response.data.accessToken); // เก็บใน cookie
   }
 };
 
-// Logout  
+// Logout
 const handleLogout = () => {
   clearToken(); // ล้างจาก cookie และ localStorage
 };
