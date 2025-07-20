@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, FolderOpen, Search, ChevronRight, FileSearch, Landmark } from 'lucide-react';
+import { Upload, FolderOpen, Search, ChevronRight, FileSearch, Landmark, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from "../utils/axiosInstance";
 import Header from '../components/Header';
@@ -7,6 +7,7 @@ import SideBar from '../components/SideBar';
 import HeaderSlip from '../components/SlipReader/HeaderSlip';
 import type { Case, CaseType } from '../types/case';
 import Modal from '../components/SlipReader/Modal';
+import { col } from 'framer-motion/client';
 
 interface Evidence {
   id: string;
@@ -14,6 +15,7 @@ interface Evidence {
   imageType: 'slip' | 'weapon' | 'drugs' | 'adult' | 'other';
   status: 'safe' | 'suspicious' | 'flagged';
   caseId?: string;
+  excel_url?: string; // <<< ADDED: Optional field for OCR URL
 }
 
 function SlipReaderPage() {
@@ -26,6 +28,7 @@ function SlipReaderPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalCaseId, setModalCaseId] = useState<string | null>(null);
   const [modalEvidenceId, setModalEvidenceId] = useState<string | null>(null); // <<< ADDED: State to store the selected evidence ID
+  const [currentOcrUrl, setCurrentOcrUrl] = useState<string | null>(null);
 
   const [results, setResults] = useState<Evidence[]>([
     {
@@ -87,14 +90,28 @@ function SlipReaderPage() {
 
     try {
       // Upload evidence
-      const response = await axios.post('/evidences/upload', formData, {
+      const response = await axios.post(`/evidences/upload/${selectedCase}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-
+      //receive zipfile after classification img_url
+      const zip_url = response.data.firebase_url;
+      if (!zip_url) {
+        alert('ไม่พบ URL ของไฟล์ที่อัปโหลด');
+        return;
+      }
       const evidenceId = response.data.evidence_id;
       console.log('Evidence uploaded with ID:', response.data);
+
       // Call OCR backend for this evidence
-      await axios.post(`/ocr/process-ocr`);
+      console.log(zip_url, selectedCase, evidenceId);
+      console.log(typeof zip_url, typeof selectedCase, typeof evidenceId);
+      const response_ocr = await axios.post(`/ocr/process-ocr`, {
+        firebase_url: zip_url,
+        case_id: selectedCase,
+        evidence_id: evidenceId // <<< ADDED: Pass the evidence ID to OCR processing
+      });
+      const ocrUrl = response_ocr.data.excel_url;
+      setCurrentOcrUrl(ocrUrl); // <<< ADDED: Set the current OCR URL
       // Optionally, fetch updated evidence list or update results
       setResults(prev => [
         ...prev,
@@ -103,7 +120,8 @@ function SlipReaderPage() {
           fileName: file.name,
           imageType: response.data.imageType || 'other',
           status: response.data.status || 'safe',
-          caseId: selectedCase
+          caseId: selectedCase,
+          excel_url: ocrUrl // <<< ADDED: Include the OCR URL in the results
         }
       ]);
     } catch (error) {
@@ -253,7 +271,6 @@ function SlipReaderPage() {
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
                 {/* Head Result*/}
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-white">Logs</h2>
                   <div className="flex items-center space-x-2">
                     <Search className="w-4 h-4 text-gray-400" />
                     <input

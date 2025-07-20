@@ -2,7 +2,7 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, status
 from fastapi.responses import StreamingResponse
 from loguru import logger
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel
 from pyzbar.pyzbar import decode
 from ...utils.read_save_ocr import has_qr_code, save_ocr_results,detect_bank,handle_gsb,handle_scb, handle_krungthai, handle_kbank, handle_bangkok, handle_unknown
 from ...configs.firebase import upload_file_to_storage
@@ -25,15 +25,19 @@ ocr_reader = easyocr.Reader(['th', 'en'], gpu=True)
 router = APIRouter(prefix="/ocr", tags=["ocr"])
 
 class OcrRequest(BaseModel):
-    firebase_url: HttpUrl
-    case_id: int
+    firebase_url: str
+    case_id: str
+    evidence_id: int
 
 class OcrResponse(BaseModel):
     message: str
-    case_id: int | None = None
-    excel_url: str | None = None  # เพิ่ม field สำหรับ URL ของไฟล์ Excel
+    results: list
+    case_id: str | None = None
+    excel_url: str
 
 class OcrResult(BaseModel):
+    evidence_id: int
+    case_id: str
     file: str
     bank: str
     sender_name: str
@@ -66,6 +70,12 @@ def resize_image(image_data: bytes, max_size: int = 1600) -> bytes:
     return image_data
 
 # --- Endpoint หลักที่ปรับปรุงตรรกะ ---
+@router.get("/",summary="List all OCR results", description="Retrieve a list of all OCR results.")
+def read_ocr_results() -> list[OcrResult]:
+    """
+    Endpoint to retrieve all OCR results.
+    """
+    return ocr_db
 
 @router.post(
     "/process-ocr",
@@ -91,8 +101,8 @@ async def process_ocr(request: OcrRequest):
     results = []
     paths = []
     results_filter = []
-    processed_count = 0
-    skipped_count = 0
+    processed_count = int(0)
+    skipped_count = int(0)
 
     try:
         zip_buffer = io.BytesIO(zip_contents)
@@ -166,7 +176,11 @@ async def process_ocr(request: OcrRequest):
 
                 i += 1
                 results_filter.append(row)
-                print(results_filter)
+                ocr_db.append(OcrResult(
+                    evidence_id=request.evidence_id, 
+                    case_id=request.case_id,  # Use the counter as OCR ID
+                    **row
+                ))
         df = pd.DataFrame(results_filter)
         output_buffer = io.BytesIO()
         df.to_excel(output_buffer, index=False, engine='openpyxl')

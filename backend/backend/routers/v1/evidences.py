@@ -7,6 +7,7 @@ from fastapi import APIRouter, File, UploadFile, HTTPException, status
 from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel
+import os
 
 from ...configs.registry import models
 
@@ -26,10 +27,12 @@ class Evidence(BaseModel):
 class UploadSlipsResponse(BaseModel):
     message: str
     firebase_url: str
+    case_id: str
+    evidence_id: int
 
 evidence_db: list[Evidence] = []
 
-router.get("/", summary="List all evidences", description="Retrieve a list of all evidences.")
+@router.get("/", summary="List all evidences", description="Retrieve a list of all evidences.")
 def read_evidences() -> List[Evidence]:
     """
     Endpoint to retrieve all evidences.
@@ -58,16 +61,8 @@ async def upload_and_get_url(
         )
     
     evidence_id = len(evidence_db) + 1
-
-    evidence = Evidence(
-        case_id=case_id,
-        evidence_url=firebase_url,
-        created_at=datetime.utcnow(),
-        evidence_id=evidence_id
-    )
-    evidence_db.append(evidence)
     case.evidence_ids.append(evidence_id)
-    
+
     slip_classifier = models.get("slip_classifier")
     if not slip_classifier:
         raise HTTPException(
@@ -99,7 +94,8 @@ async def upload_and_get_url(
                     
                     # 5. หากเป็น 'Slip' ให้เก็บข้อมูลไว้
                     if classification == "Slip":
-                        slip_images_data.append({'filename': filename, 'data': image_bytes})
+                        filename_in_zip = os.path.join("Slip", os.path.basename(filename))
+                        slip_images_data.append({'filename': filename_in_zip, 'data': image_bytes})
 
     except zipfile.BadZipFile:
         raise HTTPException(
@@ -122,23 +118,24 @@ async def upload_and_get_url(
 
     # 8. อัปโหลด ZIP ที่มีเฉพาะสลิปไปยัง Firebase Storage
     date_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    new_zip_filename = f"/uploads/slips_only_{date_str}_{file.filename}"
+    new_zip_filename = f"uploads/slips_only_{date_str}_{file.filename}"
     firebase_url = await upload_file_to_storage(
         in_memory_zip.getvalue(),
         new_zip_filename,
         "application/zip"
     )
-    eviedence = Evidence(
+    evidence = Evidence(
         case_id=case_id,
         evidence_url=firebase_url,
         created_at=datetime.utcnow(),
         evidence_id=evidence_id
     )
-    evidence_db.append(eviedence)
+    evidence_db.append(evidence)
 
     # 9. ส่งคืน URL ของ Firebase ในรูปแบบ JSON
     return UploadSlipsResponse(
         message="Slips have been processed and uploaded successfully.",
         firebase_url=firebase_url,
         case_id=case_id,
+        evidence_id=evidence_id
     )
