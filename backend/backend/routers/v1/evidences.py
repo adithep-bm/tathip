@@ -1,14 +1,17 @@
+from fastapi import APIRouter
 import io
 import zipfile
 from typing import List
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, status
+from fastapi.responses import StreamingResponse
 from loguru import logger
 from pydantic import BaseModel
 
 from ...configs.registry import models
 
 from ...configs.firebase import upload_file_to_storage
+from datetime import datetime
 
 router = APIRouter(prefix="/evidences", tags=["evidences"])
 
@@ -22,27 +25,28 @@ class ClassificationResult(BaseModel):
     filename: str
     classification: str
 
-class UploadAndClassifyResponse(BaseModel):
+# Model ใหม่สำหรับ Response ของ Endpoint นี้โดยเฉพาะ
+class UploadSlipsResponse(BaseModel):
     message: str
     firebase_url: str
-    results: List[ClassificationResult]
 
 evidence_db: list[Evidence] = []
 
-# --- Endpoint สำหรับจำแนกประเภทสลิป ---
+# --- Endpoint สำหรับจำแนกประเภทสลิปและส่งคืนเฉพาะ URL ---
 @router.post(
     "/upload",
-    summary="Upload ZIP and classify images as Slip/Other",
-    response_model=UploadAndClassifyResponse,
+    summary="Upload ZIP, classify, and return the Firebase URL of slips-only ZIP",
+    response_model=UploadSlipsResponse, # <-- ระบุ Model สำหรับ Response
     tags=["Classification"]
 )
-async def upload_and_classify_slip(
+async def upload_and_get_url(
     file: UploadFile = File(..., description="A ZIP file with images to classify.")
 ):
     """
-    รับไฟล์ ZIP, แตกไฟล์รูปภาพ, และใช้โมเดลจำแนกประเภทว่าเป็นสลิปหรือไม่
+    รับไฟล์ ZIP, จำแนกรูปภาพ, สร้าง ZIP ใหม่ที่มีเฉพาะสลิป,
+    อัปโหลดไปยัง Firebase, และส่งคืนเฉพาะ URL ของไฟล์นั้น
     """
-    # 1. ตรวจสอบและดึงโมเดลที่ต้องการจาก Registry
+    # 1. ตรวจสอบและดึงโมเดล
     slip_classifier = models.get("slip_classifier")
     if not slip_classifier:
         raise HTTPException(
@@ -50,44 +54,62 @@ async def upload_and_classify_slip(
             detail="The Slip Classifier model is not available."
         )
 
-    # 2. ตรวจสอบประเภทไฟล์ที่อัปโหลด
+    # 2. ตรวจสอบประเภทไฟล์
     if file.content_type not in ["application/zip", "application/x-zip-compressed"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid file type. Please upload a ZIP file."
         )
 
-    # 3. อ่านข้อมูลไฟล์และอัปโหลดไป Firebase
     zip_contents = await file.read()
-    firebase_url = await upload_file_to_storage(zip_contents, file.filename, file.content_type)
-    
-    classification_results = []
-    image_extensions = ('.png', '.jpg', '.jpeg')
+    slip_images_data = []
 
-    # 4. วนลูปในไฟล์ ZIP เพื่อประมวลผลรูปภาพ
+    # 3. วนลูปในไฟล์ ZIP เพื่อประมวลผลรูปภาพ
     try:
         with zipfile.ZipFile(io.BytesIO(zip_contents)) as thezip:
             for filename in thezip.namelist():
-                # คัดกรองเฉพาะไฟล์รูปภาพ
+                image_extensions = ('.png', '.jpg', '.jpeg')
                 if filename.lower().endswith(image_extensions) and not filename.startswith('__MACOSX'):
                     image_bytes = thezip.read(filename)
                     
-                    # 5. เรียกใช้เมธอด predict จาก service ที่เลือกไว้
+                    # 4. จำแนกประเภท
                     classification = slip_classifier.predict_classify(image_bytes)
                     logger.info(f"Classified '{filename}' as '{classification}'")
                     
-                    classification_results.append(
-                        ClassificationResult(filename=filename, classification=classification)
-                    )
+                    # 5. หากเป็น 'Slip' ให้เก็บข้อมูลไว้
+                    if classification == "Slip":
+                        slip_images_data.append({'filename': filename, 'data': image_bytes})
+
     except zipfile.BadZipFile:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="The uploaded file is not a valid ZIP file."
         )
 
-    # 6. ส่งผลลัพธ์ทั้งหมดกลับไป
-    return UploadAndClassifyResponse(
-        message="Classification complete",
-        firebase_url=firebase_url,
-        results=classification_results
+    # 6. ตรวจสอบว่ามีสลิปหรือไม่
+    if not slip_images_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No slips were found in the uploaded ZIP file."
+        )
+        
+    # 7. สร้างไฟล์ ZIP ใหม่ในหน่วยความจำ
+    in_memory_zip = io.BytesIO()
+    with zipfile.ZipFile(in_memory_zip, 'w', zipfile.ZIP_DEFLATED) as new_zip:
+        for item in slip_images_data:
+            new_zip.writestr(item['filename'], item['data'])
+
+    # 8. อัปโหลด ZIP ที่มีเฉพาะสลิปไปยัง Firebase Storage
+    date_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
+    new_zip_filename = f"slips_only_{date_str}_{file.filename}"
+    firebase_url = await upload_file_to_storage(
+        in_memory_zip.getvalue(),
+        new_zip_filename,
+        "application/zip"
+    )
+
+    # 9. ส่งคืน URL ของ Firebase ในรูปแบบ JSON
+    return UploadSlipsResponse(
+        message="Slips have been processed and uploaded successfully.",
+        firebase_url=firebase_url
     )

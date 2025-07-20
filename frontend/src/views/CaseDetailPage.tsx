@@ -1,6 +1,6 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { File, Trash2, AlertCircle } from "lucide-react";
+import { File, Trash2, AlertCircle, ArrowLeft } from "lucide-react";
 import axios from "../utils/axiosInstance";
 import Header from "../components/Header";
 import SideBar from "../components/SideBar";
@@ -8,6 +8,7 @@ import type { Case } from "../types/case";
 
 function CaseDetailPage() {
   const { case_id } = useParams();
+  const navigate = useNavigate();
   const [caseDetail, setCaseDetail] = useState<Case | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +48,10 @@ function CaseDetailPage() {
     }
   };
 
+  const handleBackToManagement = () => {
+    navigate('/case');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-900">
@@ -81,6 +86,17 @@ function CaseDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           <SideBar />
           <div className="lg:col-span-3 space-y-6">
+            {/* Back Button */}
+            <div className="flex items-center mb-6">
+              <button
+                onClick={handleBackToManagement}
+                className="flex items-center space-x-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors duration-200 group"
+              >
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-200" />
+                <span>กลับไป Case Management</span>
+              </button>
+            </div>
+
             {/* Case Details */}
             <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
               <h1 className="text-2xl font-bold text-white mb-4">{caseDetail.title}</h1>

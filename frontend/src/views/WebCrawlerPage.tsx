@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SideBar from '../components/SideBar';
 import Header from '../components/Header';
 import { AlertTriangle, CheckCircle, FolderOpen, Globe, PauseCircle, PlayCircle, Plus, Search, X } from 'lucide-react';
+import HeaderWebCrawler from '../components/WebCrawler/HeaderWebCrawler';
 
 interface CrawlResult {
   id: string;
@@ -14,6 +16,7 @@ interface CrawlResult {
 }
 
 function WebCrawlerPage() {
+  const navigate = useNavigate();
   const [isRunning, setIsRunning] = useState(false);
   const [keywords, setKeywords] = useState<string[]>([]);
   const [newKeyword, setNewKeyword] = useState('');
@@ -75,6 +78,10 @@ function WebCrawlerPage() {
     setShowCreateCaseModal(true);
   };
 
+  const handleViewDetails = (id: string) => {
+    navigate(`/crawler/${id}`);
+  };
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'safe': return <CheckCircle className="w-4 h-4" />;
@@ -104,15 +111,7 @@ function WebCrawlerPage() {
           <div className="lg:col-span-3 space-y-6">
             <div className="space-y-6">
               {/* Header */}
-              <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
-                <div className="flex items-center space-x-3">
-                  <Globe className="w-8 h-8 text-cyan-400" />
-                  <div>
-                    <h1 className="text-2xl font-bold text-white">Web Crawler</h1>
-                    <p className="text-gray-300 mt-1">ระบบตรวจสอบเว็บไซต์ต้องสงสัยอัตโนมัติ</p>
-                  </div>
-                </div>
-              </div>
+              < HeaderWebCrawler />
               {/* Control Panel */}
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
                 <div className="flex items-center justify-between mb-4">
@@ -210,6 +209,8 @@ function WebCrawlerPage() {
                   </div>
                 </div>
               </div>
+
+              {/* Results Section */}
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-white">ผลการตรวจสอบ</h2>
@@ -258,7 +259,10 @@ function WebCrawlerPage() {
                         </div>
 
                         <div className="flex space-x-2">
-                          <button className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors">
+                          <button
+                            onClick={() => handleViewDetails(result.id)}
+                            className="px-3 py-1 bg-blue-700 text-blue-200 rounded text-sm hover:bg-blue-600 transition-colors"
+                          >
                             ดูรายละเอียด
                           </button>
                           {(result.status === 'flagged' || result.status === 'suspicious') && (
