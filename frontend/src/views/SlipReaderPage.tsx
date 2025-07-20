@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, FolderOpen, Search, ChevronRight, FileSearch, Landmark } from 'lucide-react';
+import { Upload, FolderOpen, Search, ChevronRight, FileSearch, Landmark, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from "../utils/axiosInstance";
 import Header from '../components/Header';
@@ -9,11 +9,12 @@ import type { Case, CaseType } from '../types/case';
 import Modal from '../components/SlipReader/Modal';
 
 interface Evidence {
+  case_id?: string;
   id: string;
   fileName: string;
   imageType: 'slip' | 'weapon' | 'drugs' | 'adult' | 'other';
-  status: 'safe' | 'suspicious' | 'flagged';
-  caseId?: string;
+  caseTitle?: string; // <<< ADDED: Optional field for case title
+  excel_url?: string; // <<< ADDED: Optional field for OCR URL
 }
 
 function SlipReaderPage() {
@@ -26,19 +27,33 @@ function SlipReaderPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalCaseId, setModalCaseId] = useState<string | null>(null);
   const [modalEvidenceId, setModalEvidenceId] = useState<string | null>(null); // <<< ADDED: State to store the selected evidence ID
-
   const [results, setResults] = useState<Evidence[]>([
     {
       id: '1',
       fileName: 'slip_001.jpg',
       imageType: 'slip',
-      status: 'suspicious',
-      caseId: '123'
+      case_id: '123',
+      caseTitle: 'คดีตัวอย่าง 1',
     }]);
+
+  const fetchResults = async () => {
+    try {
+      const response = await axios.get<Evidence[]>('/evidences');
+      console.log('Fetched results:', response.data);
+      setResults(response.data);
+    } catch (error) {
+      console.error('Error fetching results:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchResults();
+  }, []);
+
 
   async function fetchCases() {
     try {
-      const response = await axios.get<Case[]>('/cases');
+      const response = await axios.get<Case[]>(`/cases`);
       setCases(response.data);
     } catch (error) {
       // handle error if needed
@@ -87,13 +102,27 @@ function SlipReaderPage() {
 
     try {
       // Upload evidence
-      const response = await axios.post('/evidences/upload', formData, {
+      const response = await axios.post(`/evidences/upload/${selectedCase}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
+      //receive zipfile after classification img_url
+      const zip_url = response.data.firebase_url;
+      if (!zip_url) {
+        alert('ไม่พบ URL ของไฟล์ที่อัปโหลด');
+        return;
+      }
+      const evidenceId = response.data.evidence_id;
+      console.log('Evidence uploaded with ID:', response.data);
 
-      const evidenceId = response.data.id;
       // Call OCR backend for this evidence
-      await axios.post(`/evidence/${evidenceId}/ocr`);
+      console.log(zip_url, selectedCase, evidenceId);
+      console.log(typeof zip_url, typeof selectedCase, typeof evidenceId);
+      const response_ocr = await axios.post(`/ocr/process-ocr`, {
+        firebase_url: zip_url,
+        case_id: selectedCase,
+        evidence_id: evidenceId // <<< ADDED: Pass the evidence ID to OCR processing
+      });
+      const ocrUrl = response_ocr.data.excel_url;
       // Optionally, fetch updated evidence list or update results
       setResults(prev => [
         ...prev,
@@ -102,7 +131,9 @@ function SlipReaderPage() {
           fileName: file.name,
           imageType: response.data.imageType || 'other',
           status: response.data.status || 'safe',
-          caseId: selectedCase
+          caseId: selectedCase,
+          excel_url: ocrUrl, // <<< ADDED: Include the OCR URL in the results
+          evidenceType: response.data.evidence_type || 'slip',
         }
       ]);
     } catch (error) {
@@ -123,11 +154,13 @@ function SlipReaderPage() {
   };
 
   // +++ จุดสำคัญ: สร้างข้อมูลที่รวมแล้วก่อน Render +++
+
+
   const enrichedResults = results.map(result => {
-    const associatedCase = cases.find(c => c.case_id.toString() === result.caseId);
+    const associatedCase = cases.find(c => c.case_id.toString() === result.case_id);
     return {
       fileName: result.fileName,
-      caseId: result.caseId,
+      caseId: result.case_id,
       caseTitle: associatedCase?.title || 'ไม่พบคดี',
       caseType: associatedCase?.case_type,
       evidenceCount: associatedCase?.evidenceCount,
@@ -252,7 +285,6 @@ function SlipReaderPage() {
               <div className="bg-slate-800 rounded-lg shadow-lg p-6 border border-slate-700">
                 {/* Head Result*/}
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold text-white">Logs</h2>
                   <div className="flex items-center space-x-2">
                     <Search className="w-4 h-4 text-gray-400" />
                     <input
@@ -295,9 +327,10 @@ function SlipReaderPage() {
                             <td className="px-6 py-4 text-right">
                               {/* +++ MODIFIED: Button now opens the modal +++ */}
                               <button
-                                onClick={() => handleOpenActionModal(item.caseId ?? '', item.id)}
+                                onClick={() => item.caseId && navigate(`/evidence/${item.caseId}`)}
+                                onDoubleClick={() => handleOpenActionModal(item.caseId || '', item.id)}
                                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-600 text-white font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                                disabled={!item.caseId || !item.id}
+                                disabled={!item.caseId}
                               >
                                 <span>ดูรายละเอียดเพิ่มเติม</span>
                                 <ChevronRight className="w-4 h-4" />

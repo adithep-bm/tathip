@@ -28,7 +28,6 @@ class CaseType(str, Enum):
 
 class Case(BaseModel):
     case_id: str
-    case_id: str
     title: str
     case_type: CaseType
     description: str | None = None
@@ -38,6 +37,7 @@ class Case(BaseModel):
     lastUpdated: date
     assignedOfficer: str
     evidenceCount: int | None = 0
+    evidence_ids: list[int] = []  # Add this field
 
 
 # In-memory "database"

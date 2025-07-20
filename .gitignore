@@ -31,3 +31,6 @@ service-account.json
 *.env
 
 database.db
+.env
+torch-2.7.1+cu118-cp313-cp313-win_amd64.whl
+ocr_results
