@@ -12,38 +12,62 @@ from ...configs.registry import models
 
 from ...configs.firebase import upload_file_to_storage
 from datetime import datetime
+from .cases import cases_db, Case
 
 router = APIRouter(prefix="/evidences", tags=["evidences"])
 
 class Evidence(BaseModel):
-  title: str
-  description: str | None = None
   case_id: str
+  evidence_id: int | None = None
+  evidence_url: str
+  created_at: datetime
 
 # Model ใหม่สำหรับ Response ของ Endpoint นี้โดยเฉพาะ
 class UploadSlipsResponse(BaseModel):
-    title:str
     message: str
     firebase_url: str
-    evidence_id: int | None = None
 
 evidence_db: list[Evidence] = []
 
+router.get("/", summary="List all evidences", description="Retrieve a list of all evidences.")
+def read_evidences() -> List[Evidence]:
+    """
+    Endpoint to retrieve all evidences.
+    """
+    return evidence_db
 # --- Endpoint สำหรับจำแนกประเภทสลิปและส่งคืนเฉพาะ URL ---
 @router.post(
-    "/upload",
+    "/upload/{case_id}",
     summary="Upload ZIP, classify, and return the Firebase URL of slips-only ZIP",
     response_model=UploadSlipsResponse, # <-- ระบุ Model สำหรับ Response
 )
 async def upload_and_get_url(
+    case_id: str,
     file: UploadFile = File(..., description="A ZIP file with images to classify.")
-):
+)-> UploadSlipsResponse:
     """
     รับไฟล์ ZIP, จำแนกรูปภาพ, สร้าง ZIP ใหม่ที่มีเฉพาะสลิป,
     อัปโหลดไปยัง Firebase, และส่งคืนเฉพาะ URL ของไฟล์นั้น
     """
     # 1. ตรวจสอบและดึงโมเดล
+    case = next((case for case in cases_db if case.case_id == case_id), None)
+    if not case:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Case with id {case_id} not found"
+        )
+    
     evidence_id = len(evidence_db) + 1
+
+    evidence = Evidence(
+        case_id=case_id,
+        evidence_url=firebase_url,
+        created_at=datetime.utcnow(),
+        evidence_id=evidence_id
+    )
+    evidence_db.append(evidence)
+    case.evidence_ids.append(evidence_id)
+    
     slip_classifier = models.get("slip_classifier")
     if not slip_classifier:
         raise HTTPException(
@@ -98,15 +122,23 @@ async def upload_and_get_url(
 
     # 8. อัปโหลด ZIP ที่มีเฉพาะสลิปไปยัง Firebase Storage
     date_str = datetime.utcnow().strftime("%Y%m%d_%H%M%S")
-    new_zip_filename = f"slips_only_{date_str}_{file.filename}"
+    new_zip_filename = f"/uploads/slips_only_{date_str}_{file.filename}"
     firebase_url = await upload_file_to_storage(
         in_memory_zip.getvalue(),
         new_zip_filename,
         "application/zip"
     )
+    eviedence = Evidence(
+        case_id=case_id,
+        evidence_url=firebase_url,
+        created_at=datetime.utcnow(),
+        evidence_id=evidence_id
+    )
+    evidence_db.append(eviedence)
 
     # 9. ส่งคืน URL ของ Firebase ในรูปแบบ JSON
     return UploadSlipsResponse(
         message="Slips have been processed and uploaded successfully.",
-        firebase_url=firebase_url
+        firebase_url=firebase_url,
+        case_id=case_id,
     )

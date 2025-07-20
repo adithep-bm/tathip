@@ -50,7 +50,7 @@ def on_startup():
 # --- Middleware ---
 origins = [
     "http://localhost:5173",
-    "http://192.168.40.254:5173",
+    "http://172.20.10.3:5173",
 ]
 
 app.add_middleware(

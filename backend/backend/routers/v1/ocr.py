@@ -26,12 +26,27 @@ router = APIRouter(prefix="/ocr", tags=["ocr"])
 
 class OcrRequest(BaseModel):
     firebase_url: HttpUrl
-    case_id: int | None = None
+    case_id: int
 
 class OcrResponse(BaseModel):
     message: str
     case_id: int | None = None
     excel_url: str | None = None  # เพิ่ม field สำหรับ URL ของไฟล์ Excel
+
+class OcrResult(BaseModel):
+    file: str
+    bank: str
+    sender_name: str
+    sender_bank: str
+    sender_acc: str
+    receiver_name: str
+    receiver_bank: str
+    receiver_acc: str
+    amount: str
+    date: str
+    qr_code_text: str
+
+ocr_db: list[OcrResult] = []
 
 def read_ocr_from_image_data(image_data: bytes) -> str:
     """ใช้ OCR เพื่อแปลงข้อความจากข้อมูลภาพ (bytes) โดยตรง"""

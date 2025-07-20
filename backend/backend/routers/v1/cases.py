@@ -37,6 +37,7 @@ class Case(BaseModel):
     lastUpdated: date
     assignedOfficer: str
     evidenceCount: int | None = 0
+    evidence_ids: list[int] = []  # Add this field
 
 
 # In-memory "database"
