@@ -4,7 +4,8 @@ const isDev = !isProd;
 const conf = {
   isProd,
   isDev,
-  apiPrefix: isProd ? '/api' : 'http://localhost:8000/v1',
+  apiPrefix: isProd ? '/v1' : import.meta.env.VITE_API_PREFIX,
 }
+
 
 export default conf;

@@ -91,9 +91,10 @@ function SlipReaderPage() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      const evidenceId = response.data.id;
+      const evidenceId = response.data.evidence_id;
+      console.log('Evidence uploaded with ID:', response.data);
       // Call OCR backend for this evidence
-      await axios.post(`/evidence/${evidenceId}/ocr`);
+      await axios.post(`/ocr/process-ocr`);
       // Optionally, fetch updated evidence list or update results
       setResults(prev => [
         ...prev,

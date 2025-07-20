@@ -18,12 +18,14 @@ router = APIRouter(prefix="/evidences", tags=["evidences"])
 class Evidence(BaseModel):
   title: str
   description: str | None = None
-  case_id: int
+  case_id: str
 
 # Model ใหม่สำหรับ Response ของ Endpoint นี้โดยเฉพาะ
 class UploadSlipsResponse(BaseModel):
+    title:str
     message: str
     firebase_url: str
+    evidence_id: int | None = None
 
 evidence_db: list[Evidence] = []
 
@@ -41,6 +43,7 @@ async def upload_and_get_url(
     อัปโหลดไปยัง Firebase, และส่งคืนเฉพาะ URL ของไฟล์นั้น
     """
     # 1. ตรวจสอบและดึงโมเดล
+    evidence_id = len(evidence_db) + 1
     slip_classifier = models.get("slip_classifier")
     if not slip_classifier:
         raise HTTPException(

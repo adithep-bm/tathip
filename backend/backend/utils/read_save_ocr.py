@@ -1,7 +1,26 @@
+import io
 import os
+from PIL import Image
+from loguru import logger
+import re
+from pyzbar.pyzbar import decode
+import pandas as pd
 
-
-
+def has_qr_code(image_data: bytes) -> bool:
+    try:
+        return len(decode(Image.open(io.BytesIO(image_data)))) > 0
+    except Exception:
+        return False
+    
+# --- ฟังก์ชัน Helper ที่ปรับปรุงแล้ว ---
+def save_ocr_results(case_id: int | None, text: str, filename: str) -> None:
+    """บันทึกผลลัพธ์ OCR ลงในไดเรกทอรี local"""
+    base_dir = "ocr_results"
+    case_dir = os.path.join(base_dir, f"case_{case_id}" if case_id else "uncategorized")
+    os.makedirs(case_dir, exist_ok=True)
+    output_path = os.path.join(case_dir, f"{filename}.txt")
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(text)
 
 def detect_bank(text):
     """Detect bank from OCR text content."""
@@ -433,3 +452,20 @@ def log_data(file_name, bank, sender_name, sender_bank, sender_acc, receiver_nam
     ]
     row
     return row
+
+
+def read_qr_code(image_path):
+    """อ่าน QR Code จากภาพ และคืนค่าข้อความใน QR (ถ้ามี)"""
+    if not os.path.exists(image_path):
+        return "ไม่พบภาพ"
+
+    try:
+        img = Image.open(image_path)
+        decoded_objects = decode(img)
+
+        if not decoded_objects:
+            return "ไม่พบ QR Code"
+        return decoded_objects[0].data.decode("utf-8")
+
+    except Exception as e:
+        return f"Error: {str(e)}"
