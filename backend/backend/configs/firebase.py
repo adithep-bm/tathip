@@ -28,21 +28,19 @@ def initialize_firebase():
     # ใช้ logger.success แทน print เพื่อแสดงข้อความที่สำเร็จ
     logger.success("Firebase initialized successfully.")
 
-async def upload_file_to_storage(file_bytes: bytes, filename: str, content_type: str) -> str:
+
+async def upload_file_to_storage(file_bytes: bytes, destination_path: str, content_type: str) -> str:
     """
     ฟังก์ชันสำหรับอัปโหลดไฟล์ขึ้น Firebase Storage
+    - destination_path: คือ path เต็มที่ต้องการเก็บใน bucket เช่น 'reports/report-123.xlsx'
     """
     try:
         bucket = storage.bucket()
+        blob = bucket.blob(destination_path)
 
-        blob = bucket.blob(f"zip_uploads/{filename}")
-
-        blob.upload_from_string(
-            file_bytes,
-            content_type=content_type
-        )
+        blob.upload_from_string(file_bytes, content_type=content_type)
         blob.make_public()
-        logger.info(f"File '{filename}' uploaded to Firebase Storage.")
+        logger.info(f"File uploaded to '{destination_path}' in Firebase Storage.")
         return blob.public_url
 
     except Exception as e:
