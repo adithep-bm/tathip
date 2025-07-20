@@ -31,3 +31,4 @@ __pycache__
 .env
 database.db
 service-account.json
+.env

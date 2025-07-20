@@ -10,7 +10,7 @@ from . import routers
 
 from .configs.database import create_db_and_tables
 from .configs.firebase import initialize_firebase
-from .ml.prediction import YoloPredictionService # หรือ Service อื่นๆ
+from .ml.prediction import YoloPredictionService  # หรือ Service อื่นๆ
 
 from .configs.registry import models
 
@@ -24,6 +24,7 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
 # --- Startup Event ---
 @app.on_event("startup")
 def on_startup():
@@ -36,13 +37,25 @@ def on_startup():
 
     slip_classifier_path = os.getenv("YOLO_SLIP_CLASSIFIER_PATH")
     if slip_classifier_path:
-        models["slip_classifier"] = YoloPredictionService(model_path=slip_classifier_path)
-    
+        models["slip_classifier"] = YoloPredictionService(
+            model_path=slip_classifier_path
+        )
+
+    # เพิ่มโมเดลสำหรับตรวจสอบภาพผิดกฎหมาย
+    illegal_image_classifier_path = os.getenv(
+        "YOLO_ILLEGAL_IMAGE_CLASSIFIER_PATH",
+        "./backend/ml/bestYOLOillegalImageClassified4.pt",
+    )
+    if illegal_image_classifier_path:
+        models["illegal_image_classifier"] = YoloPredictionService(
+            model_path=illegal_image_classifier_path
+        )
+
 
 # --- Middleware ---
 origins = [
-    "http://localhost",
-    "http://localhost:5173",
+    "http://10.114.139.140",
+    "http://10.114.139.140:5173",
 ]
 
 app.add_middleware(

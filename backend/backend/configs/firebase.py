@@ -34,6 +34,7 @@ async def upload_file_to_storage(file_bytes: bytes, filename: str, content_type:
     """
     try:
         bucket = storage.bucket()
+
         blob = bucket.blob(f"zip_uploads/{filename}")
 
         blob.upload_from_string(
