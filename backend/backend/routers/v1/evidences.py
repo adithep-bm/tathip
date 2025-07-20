@@ -18,10 +18,14 @@ from .cases import cases_db, Case
 router = APIRouter(prefix="/evidences", tags=["evidences"])
 
 class Evidence(BaseModel):
-  case_id: str
-  evidence_id: int | None = None
-  evidence_url: str
-  created_at: datetime
+    filename: str
+    case_title: str
+    case_id: str
+    evidence_url: str
+    created_at: datetime
+    evidence_type: str
+    evidence_id: int
+    excel_url: str | None = None  # เพิ่ม field นี้
 
 # Model ใหม่สำหรับ Response ของ Endpoint นี้โดยเฉพาะ
 class UploadSlipsResponse(BaseModel):
@@ -29,6 +33,7 @@ class UploadSlipsResponse(BaseModel):
     firebase_url: str
     case_id: str
     evidence_id: int
+    evidence_type: str
 
 evidence_db: list[Evidence] = []
 
@@ -38,6 +43,18 @@ def read_evidences() -> List[Evidence]:
     Endpoint to retrieve all evidences.
     """
     return evidence_db
+@router.get("/{case_id}", summary="Get evidences by case ID", description="Retrieve evidences for a specific case ID.")
+def read_evidences_by_case(case_id: str) -> List[Evidence]:
+    """
+    Endpoint to retrieve evidences for a specific case ID.
+    """
+    evidences = [evidence for evidence in evidence_db if evidence.case_id == case_id]
+    if not evidences:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No evidences found for case ID {case_id}"
+        )
+    return evidences
 # --- Endpoint สำหรับจำแนกประเภทสลิปและส่งคืนเฉพาะ URL ---
 @router.post(
     "/upload/{case_id}",
@@ -125,17 +142,22 @@ async def upload_and_get_url(
         "application/zip"
     )
     evidence = Evidence(
+        filename=file.filename,
+        case_title=case.title,
         case_id=case_id,
         evidence_url=firebase_url,
         created_at=datetime.utcnow(),
+        evidence_type="slip",
         evidence_id=evidence_id
     )
     evidence_db.append(evidence)
+    case.evidenceCount += 1
 
     # 9. ส่งคืน URL ของ Firebase ในรูปแบบ JSON
     return UploadSlipsResponse(
         message="Slips have been processed and uploaded successfully.",
         firebase_url=firebase_url,
         case_id=case_id,
-        evidence_id=evidence_id
+        evidence_id=evidence_id,
+        evidence_type="slip"
     )

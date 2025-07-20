@@ -7,14 +7,13 @@ import SideBar from '../components/SideBar';
 import HeaderSlip from '../components/SlipReader/HeaderSlip';
 import type { Case, CaseType } from '../types/case';
 import Modal from '../components/SlipReader/Modal';
-import { col } from 'framer-motion/client';
 
 interface Evidence {
+  case_id?: string;
   id: string;
   fileName: string;
   imageType: 'slip' | 'weapon' | 'drugs' | 'adult' | 'other';
-  status: 'safe' | 'suspicious' | 'flagged';
-  caseId?: string;
+  caseTitle?: string; // <<< ADDED: Optional field for case title
   excel_url?: string; // <<< ADDED: Optional field for OCR URL
 }
 
@@ -28,20 +27,33 @@ function SlipReaderPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalCaseId, setModalCaseId] = useState<string | null>(null);
   const [modalEvidenceId, setModalEvidenceId] = useState<string | null>(null); // <<< ADDED: State to store the selected evidence ID
-  const [currentOcrUrl, setCurrentOcrUrl] = useState<string | null>(null);
-
   const [results, setResults] = useState<Evidence[]>([
     {
       id: '1',
       fileName: 'slip_001.jpg',
       imageType: 'slip',
-      status: 'suspicious',
-      caseId: '123'
+      case_id: '123',
+      caseTitle: 'คดีตัวอย่าง 1',
     }]);
+
+  const fetchResults = async () => {
+    try {
+      const response = await axios.get<Evidence[]>('/evidences');
+      console.log('Fetched results:', response.data);
+      setResults(response.data);
+    } catch (error) {
+      console.error('Error fetching results:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchResults();
+  }, []);
+
 
   async function fetchCases() {
     try {
-      const response = await axios.get<Case[]>('/cases');
+      const response = await axios.get<Case[]>(`/cases`);
       setCases(response.data);
     } catch (error) {
       // handle error if needed
@@ -111,7 +123,6 @@ function SlipReaderPage() {
         evidence_id: evidenceId // <<< ADDED: Pass the evidence ID to OCR processing
       });
       const ocrUrl = response_ocr.data.excel_url;
-      setCurrentOcrUrl(ocrUrl); // <<< ADDED: Set the current OCR URL
       // Optionally, fetch updated evidence list or update results
       setResults(prev => [
         ...prev,
@@ -121,7 +132,8 @@ function SlipReaderPage() {
           imageType: response.data.imageType || 'other',
           status: response.data.status || 'safe',
           caseId: selectedCase,
-          excel_url: ocrUrl // <<< ADDED: Include the OCR URL in the results
+          excel_url: ocrUrl, // <<< ADDED: Include the OCR URL in the results
+          evidenceType: response.data.evidence_type || 'slip',
         }
       ]);
     } catch (error) {
@@ -142,11 +154,13 @@ function SlipReaderPage() {
   };
 
   // +++ จุดสำคัญ: สร้างข้อมูลที่รวมแล้วก่อน Render +++
+
+
   const enrichedResults = results.map(result => {
-    const associatedCase = cases.find(c => c.case_id.toString() === result.caseId);
+    const associatedCase = cases.find(c => c.case_id.toString() === result.case_id);
     return {
       fileName: result.fileName,
-      caseId: result.caseId,
+      caseId: result.case_id,
       caseTitle: associatedCase?.title || 'ไม่พบคดี',
       caseType: associatedCase?.case_type,
       evidenceCount: associatedCase?.evidenceCount,
@@ -313,9 +327,10 @@ function SlipReaderPage() {
                             <td className="px-6 py-4 text-right">
                               {/* +++ MODIFIED: Button now opens the modal +++ */}
                               <button
-                                onClick={() => handleOpenActionModal(item.caseId ?? '', item.id)}
+                                onClick={() => item.caseId && navigate(`/evidence/${item.caseId}`)}
+                                onDoubleClick={() => handleOpenActionModal(item.caseId || '', item.id)}
                                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-700 hover:bg-blue-600 text-white font-semibold shadow transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400 disabled:bg-gray-600 disabled:cursor-not-allowed"
-                                disabled={!item.caseId || !item.id}
+                                disabled={!item.caseId}
                               >
                                 <span>ดูรายละเอียดเพิ่มเติม</span>
                                 <ChevronRight className="w-4 h-4" />

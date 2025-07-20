@@ -8,6 +8,9 @@ from ...utils.read_save_ocr import has_qr_code, save_ocr_results,detect_bank,han
 from ...configs.firebase import upload_file_to_storage
 import pandas as pd
 
+# Import or define evidence_db
+from ...routers.v1.evidences import evidence_db  # Adjust the import path as needed
+
 import requests
 import easyocr
 import zipfile
@@ -193,7 +196,13 @@ async def process_ocr(request: OcrRequest):
             destination_path=f"ocr_results/{export_filename}",
             content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
+        # อัปเดต evidence ด้วย excel_url
+        evidence = next((e for e in evidence_db if e.evidence_id == request.evidence_id), None)
+        if evidence:
+            evidence.excel_url = firebae_url
+            logger.info(f"Updated evidence {request.evidence_id} with excel_url: {firebae_url}")
+        else:
+            logger.warning(f"Evidence with ID {request.evidence_id} not found")
         if not results:
             detail_message = "Could not process any images. All images might contain QR codes or be unreadable."
             raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=detail_message)
