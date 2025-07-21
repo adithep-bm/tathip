@@ -20,7 +20,7 @@ export type CaseType = 'cyber_crimes' | 'financial_crimes' | 'gambling' | 'fraud
  */
 export interface Case {
   evidence?: Evidence[];
-  case_id: number;
+  case_id: string;
   title: string;
   description: string;
   case_type: CaseType;

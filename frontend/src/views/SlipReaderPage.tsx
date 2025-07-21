@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, FolderOpen, Search, ChevronRight, FileSearch, Landmark, Download } from 'lucide-react';
+import { Upload, FolderOpen, Search, ChevronRight, FileSearch, Landmark } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from "../utils/axiosInstance";
 import Header from '../components/Header';
@@ -11,7 +11,7 @@ import Modal from '../components/SlipReader/Modal';
 interface Evidence {
   case_id?: string;
   id: string;
-  fileName: string;
+  filename: string;
   imageType: 'slip' | 'weapon' | 'drugs' | 'adult' | 'other';
   caseTitle?: string; // <<< ADDED: Optional field for case title
   excel_url?: string; // <<< ADDED: Optional field for OCR URL
@@ -27,14 +27,7 @@ function SlipReaderPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalCaseId, setModalCaseId] = useState<string | null>(null);
   const [modalEvidenceId, setModalEvidenceId] = useState<string | null>(null); // <<< ADDED: State to store the selected evidence ID
-  const [results, setResults] = useState<Evidence[]>([
-    {
-      id: '1',
-      fileName: 'slip_001.jpg',
-      imageType: 'slip',
-      case_id: '123',
-      caseTitle: 'คดีตัวอย่าง 1',
-    }]);
+  const [results, setResults] = useState<Evidence[]>([]);
 
   const fetchResults = async () => {
     try {
@@ -105,7 +98,7 @@ function SlipReaderPage() {
       const response = await axios.post(`/evidences/upload/${selectedCase}`, formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      //receive zipfile after classification img_url
+
       const zip_url = response.data.firebase_url;
       if (!zip_url) {
         alert('ไม่พบ URL ของไฟล์ที่อัปโหลด');
@@ -117,26 +110,20 @@ function SlipReaderPage() {
       // Call OCR backend for this evidence
       console.log(zip_url, selectedCase, evidenceId);
       console.log(typeof zip_url, typeof selectedCase, typeof evidenceId);
-      const response_ocr = await axios.post(`/ocr/process-ocr`, {
+      await axios.post(`/ocr/process-ocr`, {
         firebase_url: zip_url,
         case_id: selectedCase,
-        evidence_id: evidenceId // <<< ADDED: Pass the evidence ID to OCR processing
+        evidence_id: evidenceId
       });
-      const ocrUrl = response_ocr.data.excel_url;
-      // Optionally, fetch updated evidence list or update results
-      setResults(prev => [
-        ...prev,
-        {
-          id: evidenceId,
-          fileName: file.name,
-          imageType: response.data.imageType || 'other',
-          status: response.data.status || 'safe',
-          caseId: selectedCase,
-          excel_url: ocrUrl, // <<< ADDED: Include the OCR URL in the results
-          evidenceType: response.data.evidence_type || 'slip',
-        }
-      ]);
+
+      // อัปเดตข้อมูลในตารางหลังจาก upload สำเร็จ
+      await fetchResults();
+      await fetchCases(); // อัปเดต cases ด้วยเผื่อ evidence count เปลี่ยน
+
+      alert('อัปโหลดและวิเคราะห์ไฟล์สำเร็จแล้ว!');
+
     } catch (error) {
+      console.error('Upload error:', error);
       alert('เกิดข้อผิดพลาดในการอัปโหลดหรือวิเคราะห์ไฟล์');
     } finally {
       setProcessing(false);
@@ -153,13 +140,10 @@ function SlipReaderPage() {
     }
   };
 
-  // +++ จุดสำคัญ: สร้างข้อมูลที่รวมแล้วก่อน Render +++
-
-
   const enrichedResults = results.map(result => {
     const associatedCase = cases.find(c => c.case_id.toString() === result.case_id);
     return {
-      fileName: result.fileName,
+      filename: result.filename,
       caseId: result.case_id,
       caseTitle: associatedCase?.title || 'ไม่พบคดี',
       caseType: associatedCase?.case_type,
@@ -311,7 +295,7 @@ function SlipReaderPage() {
                         enrichedResults.map((item, index) => (
                           <tr key={`${item.caseId}-${index}`} className="bg-slate-800 border-b border-slate-700 hover:bg-slate-600/50">
                             <td className="px-6 py-4 font-medium text-white whitespace-nowrap">
-                              {item.fileName}
+                              {item.filename}
                             </td>
                             <td className="px-6 py-4">
                               {item.caseTitle}

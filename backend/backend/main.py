@@ -11,14 +11,12 @@ from . import routers
 from .configs.database import create_db_and_tables
 from .configs.firebase import initialize_firebase
 from .ml.prediction import YoloPredictionService  # หรือ Service อื่นๆ
+from jinja2 import Environment, FileSystemLoader
 
 from .configs.registry import models
 
-from fastapi import FastAPI, File, UploadFile
-import torch
-import easyocr
-import numpy as np
-from PIL import Image   
+from fastapi import FastAPI
+from pathlib import Path 
 
 app = FastAPI()
 
@@ -42,6 +40,12 @@ def on_startup():
     """
     create_db_and_tables()
     initialize_firebase()
+    # Path(__file__).parent คือ path ของโฟลเดอร์ที่ไฟล์ main.py อยู่ (backend/backend/)
+    TEMPLATE_DIR = Path(__file__).parent / "templates"
+    
+    # ⭐️ 3. ตั้งค่า Jinja2 Environment ด้วย Path ที่ถูกต้อง
+    app.state.templates = Environment(loader=FileSystemLoader(TEMPLATE_DIR))
+    print(f"Jinja2 environment configured to look for templates in: {TEMPLATE_DIR}")
 
     slip_classifier_path = os.getenv("YOLO_SLIP_CLASSIFIER_PATH")
     if slip_classifier_path:

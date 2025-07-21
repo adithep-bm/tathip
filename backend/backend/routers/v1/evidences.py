@@ -46,6 +46,7 @@ class UploadSlipsResponse(BaseModel):
     evidence_id : int
     evidence_type : str | None = "slip"
     confidence: float | None = None  # เพิ่ม field สำหรับ confidence ของโมเดล
+    filename: str | None = None  # เพิ่ม field สำหรับชื่อไฟล์
 
 
 evidence_db: list[Evidence] = []
@@ -177,128 +178,216 @@ async def upload_and_get_url(
         case_id=case_id,
         evidence_id=evidence_id,
         evidence_type="slip",
-        confidence=confidence
+        confidence=confidence,
+        filename=file.filename
     )
 
-
-@router.get("/image/{filename}")
-async def get_image(filename: str):
+@router.get("/excel/{evidence_id}", summary="Download Excel file for evidence")
+async def download_evidence_excel(evidence_id: int):
     """
-    ส่งภาพกลับไปยัง frontend
+    ดาวน์โหลดไฟล์ Excel ที่เกี่ยวข้องกับหลักฐาน
     """
     try:
-        # กำหนดโฟลเดอร์ที่เก็บภาพ (อาจจะต้องปรับปรุงตาม structure จริง)
-        image_dirs = [
-            "uploads",
-            "temp",
-            "images",
-            "processed_images",
-            ".",  # current directory as fallback
-        ]
-
-        image_path = None
-        # ค้นหาไฟล์ในโฟลเดอร์ต่าง ๆ
-        for dir_path in image_dirs:
-            potential_path = Path(dir_path) / filename
-            if potential_path.exists() and potential_path.is_file():
-                image_path = potential_path
-                break
-
-        if not image_path or not image_path.exists():
+        # ค้นหา evidence ที่ต้องการ
+        evidence = next((e for e in evidence_db if e.evidence_id == evidence_id), None)
+        
+        if not evidence:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Image file '{filename}' not found",
+                detail=f"Evidence with ID {evidence_id} not found"
             )
-
-        # ตรวจสอบว่าเป็นไฟล์ภาพหรือไม่
-        allowed_extensions = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp"}
-        if image_path.suffix.lower() not in allowed_extensions:
+        
+        # ตรวจสอบว่ามี Excel URL หรือไม่
+        if not evidence.excel_url:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="File is not a valid image format",
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No Excel file found for evidence ID {evidence_id}"
             )
-
-        # ส่งไฟล์กลับ
-        return FileResponse(
-            path=str(image_path),
-            media_type=f"image/{image_path.suffix[1:]}",
-            filename=filename,
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error serving image {filename}: {str(e)}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error serving image: {str(e)}",
-        )
-
-
-@router.post("/download-category-zip/{category}")
-async def download_category_zip(category: str, filenames: List[str]):
-    """
-    สร้างและดาวน์โหลด ZIP file ของไฟล์ในหมวดหมู่ที่ระบุ
-
-    Args:
-        category: ชื่อหมวดหมู่ (weapon, drug, pornography, vape, other)
-        filenames: รายชื่อไฟล์ที่ต้องการรวมใน ZIP
-    """
-    try:
-        # ไดเรกทอรีที่ต้องค้นหาไฟล์
-        search_directories = [
-            Path("illegal_images"),
-            Path("legal_images"),
-            Path("output"),
-            Path("uploads"),
-            Path("temp"),
-        ]
-
-        # สร้าง ZIP file ใน memory
-        zip_buffer = io.BytesIO()
-
-        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
-            files_added = 0
-
-            for filename in filenames:
-                # ค้นหาไฟล์ในไดเรกทอรีต่างๆ
-                file_path = None
-                for directory in search_directories:
-                    potential_path = directory / filename
-                    if potential_path.exists() and potential_path.is_file():
-                        file_path = potential_path
-                        break
-
-                if file_path:
-                    # เพิ่มไฟล์ลงใน ZIP
-                    zip_file.write(file_path, filename)
-                    files_added += 1
-                    logger.info(f"Added {filename} to ZIP from {file_path}")
-                else:
-                    logger.warning(f"File {filename} not found in any directory")
-
-            if files_added == 0:
+        
+        # กรณีที่ excel_url เป็น local file path
+        if evidence.excel_url.startswith('/') or evidence.excel_url.startswith('evidence_files'):
+            excel_path = Path(evidence.excel_url)
+            
+            # ถ้าเป็น relative path ให้เพิ่ม base directory
+            if not excel_path.is_absolute():
+                excel_path = Path("evidence_files") / evidence.case_id / excel_path.name
+            
+            if not excel_path.exists():
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
-                    detail="No files found for the specified category",
+                    detail=f"Excel file not found at path: {excel_path}"
                 )
-
-        zip_buffer.seek(0)
-
-        # ส่ง ZIP file กลับ
-        return StreamingResponse(
-            io.BytesIO(zip_buffer.read()),
-            media_type="application/zip",
-            headers={
-                "Content-Disposition": f"attachment; filename={category}_images.zip"
-            },
-        )
-
+            
+            # ส่งไฟล์กลับ
+            return FileResponse(
+                path=str(excel_path),
+                media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                filename=f"ocr_results_{evidence.case_id}_{evidence_id}.xlsx",
+                headers={"Content-Disposition": f"attachment; filename=ocr_results_{evidence.case_id}_{evidence_id}.xlsx"}
+            )
+        
+        # กรณีที่ excel_url เป็น Firebase URL (สำหรับ backward compatibility)
+        elif evidence.excel_url.startswith('http'):
+            # ดาวน์โหลดจาก Firebase URL
+            import httpx
+            async with httpx.AsyncClient() as client:
+                response = await client.get(evidence.excel_url)
+                
+                if response.status_code != 200:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Excel file not accessible from URL"
+                    )
+                
+                # ส่งไฟล์กลับ
+                return StreamingResponse(
+                    io.BytesIO(response.content),
+                    media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    headers={"Content-Disposition": f"attachment; filename=ocr_results_{evidence.case_id}_{evidence_id}.xlsx"}
+                )
+        
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid Excel URL format"
+            )
+            
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error creating category ZIP for {category}: {str(e)}")
+        logger.error(f"Error downloading Excel for evidence {evidence_id}: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error creating ZIP file: {str(e)}",
+            detail=f"Error downloading Excel file: {str(e)}"
+        )
+
+# เพิ่ม endpoint สำหรับ preview Excel data (ไม่ดาวน์โหลด)
+@router.get("/excel/preview/{evidence_id}", summary="Preview Excel data for evidence")
+async def preview_evidence_excel(evidence_id: int, limit: int = 10):
+    """
+    แสดงตัวอย่างข้อมูลใน Excel file โดยไม่ต้องดาวน์โหลด
+    """
+    try:
+        # ค้นหา evidence
+        evidence = next((e for e in evidence_db if e.evidence_id == evidence_id), None)
+        
+        if not evidence:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Evidence with ID {evidence_id} not found"
+            )
+        
+        if not evidence.excel_url:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No Excel file found for evidence ID {evidence_id}"
+            )
+        
+        import pandas as pd
+        
+        # อ่านไฟล์ Excel
+        if evidence.excel_url.startswith('/') or evidence.excel_url.startswith('evidence_files'):
+            excel_path = Path(evidence.excel_url)
+            if not excel_path.is_absolute():
+                excel_path = Path("evidence_files") / evidence.case_id / excel_path.name
+            
+            if not excel_path.exists():
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="Excel file not found"
+                )
+            
+            # อ่านข้อมูลจากไฟล์
+            df = pd.read_excel(excel_path)
+            
+        elif evidence.excel_url.startswith('http'):
+            # ดาวน์โหลดและอ่านจาก URL
+            import httpx
+            async with httpx.AsyncClient() as client:
+                response = await client.get(evidence.excel_url)
+                if response.status_code != 200:
+                    raise HTTPException(
+                        status_code=status.HTTP_404_NOT_FOUND,
+                        detail="Excel file not accessible"
+                    )
+                
+                df = pd.read_excel(io.BytesIO(response.content))
+        
+        # จำกัดจำนวนแถวที่แสดง
+        preview_data = df.head(limit)
+        
+        return {
+            "evidence_id": evidence_id,
+            "case_id": evidence.case_id,
+            "total_rows": len(df),
+            "preview_rows": len(preview_data),
+            "columns": df.columns.tolist(),
+            "data": preview_data.to_dict('records')
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error previewing Excel for evidence {evidence_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error previewing Excel file: {str(e)}"
+        )
+
+# เพิ่ม endpoint สำหรับดูข้อมูล evidence พร้อม Excel status
+@router.get("/with-excel-status/{case_id}", summary="Get evidences with Excel file status")
+async def get_evidences_with_excel_status(case_id: str):
+    """
+    ดึงรายการหลักฐานพร้อมสถานะไฟล์ Excel
+    """
+    try:
+        evidences = [e for e in evidence_db if e.case_id == case_id]
+        
+        if not evidences:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"No evidences found for case {case_id}"
+            )
+        
+        result = []
+        for evidence in evidences:
+            excel_status = {
+                "has_excel": bool(evidence.excel_url),
+                "excel_accessible": False,
+                "excel_size": None
+            }
+            
+            # ตรวจสอบว่าไฟล์ Excel เข้าถึงได้หรือไม่
+            if evidence.excel_url:
+                try:
+                    if evidence.excel_url.startswith('/') or evidence.excel_url.startswith('evidence_files'):
+                        excel_path = Path(evidence.excel_url)
+                        if not excel_path.is_absolute():
+                            excel_path = Path("evidence_files") / evidence.case_id / excel_path.name
+                        
+                        if excel_path.exists():
+                            excel_status["excel_accessible"] = True
+                            excel_status["excel_size"] = excel_path.stat().st_size
+                    
+                    elif evidence.excel_url.startswith('http'):
+                        # สำหรับ Firebase URL - อาจจะใช้ HEAD request เพื่อตรวจสอบ
+                        excel_status["excel_accessible"] = True  # สมมติว่าเข้าถึงได้
+                        
+                except Exception:
+                    pass
+            
+            result.append({
+                **evidence.dict(),
+                "excel_status": excel_status
+            })
+        
+        return {"case_id": case_id, "evidences": result}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting evidences with Excel status for case {case_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving evidence data: {str(e)}"
         )

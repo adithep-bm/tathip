@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <title>รายงานคดี: {{ report.case_title }}</title>
+  <style>
+    @font-face {
+      font-family: 'TH Sarabun New';
+      src: url('https://storage.googleapis.com/tathip-ffb94.firebasestorage.app/fonts/THSarabunNew.ttf') format('truetype');
+    }
+
+    body {
+      font-family: 'TH Sarabun New', sans-serif;
+      font-size: 16pt;
+    }
+
+    .container {
+      width: 90%;
+      margin: auto;
+    }
+
+    h1,
+    h2 {
+      text-align: center;
+      border-bottom: 2px solid #333;
+      padding-bottom: 10px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccc;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .summary-key {
+      font-weight: bold;
+      width: 40%;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>รายงานสรุปผลการวิเคราะห์</h1>
+    <p><strong>รหัสคดี:</strong> {{ report.case_id }}</p>
+    <p><strong>ชื่อคดี:</strong> {{ report.case_title }}</p>
+    <p><strong>วันที่สร้างรายงาน:</strong> {{ report.created_at }}</p>
+
+    <hr>
+
+    {% if report.report_type == 'summary' %}
+    <h2>รายงานสรุปข้อมูล (Summary Report)</h2>
+    <table>
+      <tr>
+        <td class="summary-key">จำนวนธุรกรรมทั้งหมด</td>
+        <td>{{ report.report_content.total_transactions }} รายการ</td>
+      </tr>
+      <tr>
+        <td class="summary-key">ยอดเงินโอนรวมทั้งหมด</td>
+        <td>{{ "%.2f"|format(report.report_content.total_amount) }} บาท</td>
+      </tr>
+      <tr>
+        <td class="summary-key">ยอดโอนเฉลี่ย</td>
+        <td>{{ "%.2f"|format(report.report_content.average_amount) }} บาท</td>
+      </tr>
+      <tr>
+        <td class="summary-key">จำนวนผู้โอน (ไม่ซ้ำ)</td>
+        <td>{{ report.report_content.unique_senders }} บัญชี</td>
+      </tr>
+      <tr>
+        <td class="summary-key">จำนวนผู้รับ (ไม่ซ้ำ)</td>
+        <td>{{ report.report_content.unique_receivers }} บัญชี</td>
+      </tr>
+      <tr>
+        <td class="summary-key">ช่วงเวลาของธุรกรรม</td>
+        <td>{{ report.report_content.start_date }} ถึง {{ report.report_content.end_date }}</td>
+      </tr>
+    </table>
+
+    {% elif report.report_type == 'in_depth_analysis' %}
+    <h2>รายงานวิเคราะห์เชิงลึก (In-Depth Analysis)</h2>
+    <h3>สรุปฝั่งผู้รับ</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>เลขบัญชีผู้รับ</th>
+          <th>ยอดรวมที่ได้รับ (บาท)</th>
+          <th>จำนวนธุรกรรม</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report.report_content.analysis_by_receiver %}
+        <tr>
+          <td>{{ row.receiver_acc }}</td>
+          <td>{{ "%.2f"|format(row.total_amount) }}</td>
+          <td>{{ row.transaction_count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <h3>สรุปฝั่งผู้โอน</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>เลขบัญชีผู้โอน</th>
+          <th>ยอดรวมที่โอน (บาท)</th>
+          <th>จำนวนธุรกรรม</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report.report_content.analysis_by_sender %}
+        <tr>
+          <td>{{ row.sender_acc }}</td>
+          <td>{{ "%.2f"|format(row.total_amount) }}</td>
+          <td>{{ row.transaction_count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+  </div>
+</body>
+
+</html>

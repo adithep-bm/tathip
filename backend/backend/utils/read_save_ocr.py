@@ -64,44 +64,7 @@ def detect_bank(text):
     else:
         return 'unknown'
 
-# --- ฟังก์ชันใหม่: สร้าง Excel จากผลลัพธ์ OCR ---
 
-def create_excel_from_ocr(ocr_results: list[dict]):
-    """
-    รับผลลัพธ์ OCR ที่อยู่ในรูป list ของ dict มาประมวลผลและสร้างเป็นไฟล์ Excel
-    ocr_results = [{'filename': 'slip1.png', 'text': '...'}, ...]
-    """
-    data_rows = []
-    for result in ocr_results:
-        text = result['text']
-        filename = result['filename']
-        
-        bank = detect_bank(text)
-        
-        # Template สำหรับข้อมูลแต่ละแถว
-        row = {"file": filename, "bank": bank, "amount": "-", "receiver_name": "-"}
-        
-        data = {}
-        if bank == 'scb':
-            data = handle_scb(text)
-        elif bank == 'kbank':
-            data = handle_kbank(text)
-        # ... more handlers ...
-        
-        if data:
-            row.update(data)
-            
-        data_rows.append(row)
-
-    # สร้าง DataFrame และแปลงเป็น Excel ในหน่วยความจำ
-    df = pd.DataFrame(data_rows)
-    output_buffer = io.BytesIO()
-    df.to_excel(output_buffer, index=False, engine='openpyxl')
-    output_buffer.seek(0)
-    
-    return output_buffer
-
-    
 def handle_scb(text, image_path):
     print("🔁 ไทยพาณิชย์ (SCB)")
 
@@ -150,7 +113,7 @@ def handle_scb(text, image_path):
     print("   เลขบัญชี:", receiver_acc)
     print("💰 จำนวนเงิน:", amount)
     print("📅 วันที่โอน:", date)
-    print("QR code text:", image_path)
+    print("QR code text:", qr_result)
 
     return {
         "sender_name": sender_name,
@@ -217,7 +180,7 @@ def handle_krungthai(text, image_path):
     print("   เลขบัญชี:", receiver_acc)
     print("💰 จำนวนเงิน:", amount)
     print("📅 วันที่โอน:", date)
-    print("QR code text:", image_path)
+    print("QR code text:", qr_result)
 
     # Return ข้อมูล
     return {
@@ -280,7 +243,7 @@ def handle_gsb(text, image_path):
     print("   เลขบัญชี:", receiver_acc)
     print("💰 จำนวนเงิน:", amount)
     print("📅 วันที่โอน:", date)
-    print("QR code text:", image_path)
+    print("QR code text:", qr_result)
 
     return {
         "sender_name": sender_name,
@@ -361,7 +324,7 @@ def handle_kbank(text, image_path):
     print("   เลขบัญชี:", receiver_acc)
     print("💰 จำนวนเงิน:", amount)
     print("📅 วันที่โอน:", date)
-    print("QR code text:", image_path)
+    print("QR code text:", qr_result)
 
     return {
         "sender_name": sender_name,
@@ -420,7 +383,7 @@ def handle_bangkok(text, image_path):
     print("   เลขบัญชี:", receiver_acc)
     print("💰 จำนวนเงิน:", amount)
     print("📅 วันที่โอน:", date)
-    print("QR code text:", image_path)
+    print("QR code text:", qr_result)
 
     return {
         "sender_name": sender_name,

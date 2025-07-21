@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 from enum import Enum
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from sqlmodel import select
 from typing import Any, Dict, List
 from datetime import date
@@ -11,6 +12,8 @@ import matplotlib.pyplot as plt
 import io
 import os
 import uuid
+from ...configs.config import template # ⭐️ นำเข้า template จากไฟล์ config
+from weasyprint import HTML
 
 router = APIRouter(prefix="/reports", tags=["reports"])
 # --- ⭐️ UPDATE: เพิ่มฟังก์ชันแปลงวันที่ภาษาไทย ---
@@ -58,6 +61,7 @@ class ReportType(str, Enum):
 
 
 class Reports(BaseModel):
+    report_id : str = str(uuid.uuid4())  # สร้าง UUID สำหรับ report_id
     case_id: str
     report_type: ReportType
     case_title: str
@@ -94,10 +98,8 @@ def create_report(report: Reports) -> Reports:
     
     reports_db.append(report)
     return report
-# ... (ส่วน import และ model เหมือนเดิม) ...
-# ... (ส่วน import และ model เหมือนเดิม) ...
 
-@router.post("/generate", response_model=Reports)
+@router.post("/generate", response_model=Reports,)
 async def generate_report(request: ReportRequest):
     try:
         response = requests.get(str(request.excel_url))
@@ -156,3 +158,30 @@ async def generate_report(request: ReportRequest):
         raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An internal server error occurred: {str(e)}")
+    
+
+# --- ⭐️ UPDATE: เพิ่ม Endpoint สำหรับ Export PDF ---
+@router.get("/reports/{report_id}/export-pdf")
+async def export_report_to_pdf(report_id: str, request: Request):
+    # ค้นหารายงานจาก ID ใน DB (in-memory list)
+    report_to_export = next((report for report in reports_db if report.report_id == report_id), None)
+
+    if not report_to_export:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    # สร้าง HTML จาก template และข้อมูล
+    # ⭐️ ดึง template engine จาก request.app.state
+    template = request.app.state.templates.get_template("report_template.html")
+    html_out = template.render(report=report_to_export)
+    # แปลง HTML เป็น PDF ใน memory
+    pdf_bytes = HTML(string=html_out).write_pdf()
+
+    # สร้างชื่อไฟล์
+    pdf_filename = f"report_{report_to_export.case_id}_{report_to_export.report_id[:8]}.pdf"
+
+    # ส่งไฟล์ PDF กลับไปให้ User ดาวน์โหลด
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={pdf_filename}"}
+    )

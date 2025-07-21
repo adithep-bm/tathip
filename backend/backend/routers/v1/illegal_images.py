@@ -36,7 +36,6 @@ class IllegalImagesSeparationResponse(BaseModel):
     "/separate",
     summary="Separate legal and illegal images from uploaded ZIP or images",
     response_model=IllegalImagesSeparationResponse,
-    tags=["Classification"],
 )
 async def separate_illegal_images(
     file: UploadFile = File(
